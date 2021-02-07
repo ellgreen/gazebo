@@ -72,12 +72,39 @@ func compile(exp *sexp) []op.Instruction {
 
 		code := append(
 			compile(condition),
-			op.RelJumpCond.Instruction(gvalue.New(len(falsePath))),
+			op.RelJumpIfTrue.Instruction(gvalue.New(len(falsePath))),
 		)
 
 		code = append(code, falsePath...)
 
 		return append(code, truePath...)
+
+	case "while":
+		assert.True(len(exp.children) == 3, "%# v", exp.children)
+
+		body := compile(exp.children[2])
+
+		condition := append(
+			compile(exp.children[1]),
+			op.RelJumpIfFalse.Instruction(gvalue.New(len(body)+1)),
+		)
+
+		body = append(
+			body,
+			op.RelJump.Instruction(gvalue.New(-len(body)-len(condition)-1)),
+		)
+
+		return append(condition, body...)
+	}
+
+	if !exp.children[0].isAtom() {
+		code := make([]op.Instruction, 0)
+
+		for _, exp := range exp.children {
+			code = append(code, compile(exp)...)
+		}
+
+		return code
 	}
 
 	fun := compile(exp.children[0])

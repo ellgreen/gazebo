@@ -17,6 +17,22 @@ var builtins = map[string]gvalue.Instance{
 
 		return gvalue.New(!args[0].ToBool())
 	}),
+	">": gvalue.Builtin(">", func(args []gvalue.Instance) gvalue.Instance {
+		assert.True(len(args) == 2)
+
+		val1 := args[0].(*gvalue.Number).Value
+		val2 := args[1].(*gvalue.Number).Value
+
+		return gvalue.New(val1 > val2)
+	}),
+	"<": gvalue.Builtin("<", func(args []gvalue.Instance) gvalue.Instance {
+		assert.True(len(args) == 2)
+
+		val1 := args[0].(*gvalue.Number).Value
+		val2 := args[1].(*gvalue.Number).Value
+
+		return gvalue.New(val1 < val2)
+	}),
 	"+": gvalue.Builtin("+", func(args []gvalue.Instance) gvalue.Instance {
 		var sum float64
 
@@ -27,31 +43,28 @@ var builtins = map[string]gvalue.Instance{
 		return gvalue.New(sum)
 	}),
 	"-": gvalue.Builtin("-", func(args []gvalue.Instance) gvalue.Instance {
-		var sum float64
+		assert.True(len(args) == 2)
 
-		for _, arg := range args {
-			sum -= arg.(*gvalue.Number).Value
-		}
+		val1 := args[0].(*gvalue.Number).Value
+		val2 := args[1].(*gvalue.Number).Value
 
-		return gvalue.New(sum)
+		return gvalue.New(val1 - val2)
 	}),
 	"*": gvalue.Builtin("*", func(args []gvalue.Instance) gvalue.Instance {
-		var sum float64
+		assert.True(len(args) == 2)
 
-		for _, arg := range args {
-			sum *= arg.(*gvalue.Number).Value
-		}
+		val1 := args[0].(*gvalue.Number).Value
+		val2 := args[1].(*gvalue.Number).Value
 
-		return gvalue.New(sum)
+		return gvalue.New(val1 * val2)
 	}),
 	"/": gvalue.Builtin("/", func(args []gvalue.Instance) gvalue.Instance {
-		var sum float64
+		assert.True(len(args) == 2)
 
-		for _, arg := range args {
-			sum /= arg.(*gvalue.Number).Value
-		}
+		val1 := args[0].(*gvalue.Number).Value
+		val2 := args[1].(*gvalue.Number).Value
 
-		return gvalue.New(sum)
+		return gvalue.New(val1 / val2)
 	}),
 	"printf": gvalue.Builtin("printf", func(args []gvalue.Instance) gvalue.Instance {
 		assert.True(len(args) > 0)

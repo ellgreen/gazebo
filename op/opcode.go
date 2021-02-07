@@ -13,18 +13,20 @@ const (
 	LoadName
 	CallFunc
 	RelJump
-	RelJumpCond
+	RelJumpIfTrue
+	RelJumpIfFalse
 )
 
 func (op Opcode) String() string {
 	names := map[Opcode]string{
-		Invalid:     "Invalid",
-		LoadConst:   "LoadConst",
-		StoreName:   "StoreName",
-		LoadName:    "LoadName",
-		CallFunc:    "CallFunc",
-		RelJump:     "RelJump",
-		RelJumpCond: "RelJumpCond",
+		Invalid:        "Invalid",
+		LoadConst:      "LoadConst",
+		StoreName:      "StoreName",
+		LoadName:       "LoadName",
+		CallFunc:       "CallFunc",
+		RelJump:        "RelJump",
+		RelJumpIfTrue:  "RelJumpIfTrue",
+		RelJumpIfFalse: "RelJumpIfFalse",
 	}
 
 	return names[op]

@@ -64,9 +64,15 @@ func (m *Interpreter) Eval(code []op.Instruction) gvalue.Instance {
 		case op.RelJump:
 			pc += int(ins.Arg.(*gvalue.Number).Value)
 
-		case op.RelJumpCond:
+		case op.RelJumpIfTrue:
 			condition := stack.Pop()
 			if condition.ToBool() {
+				pc += int(ins.Arg.(*gvalue.Number).Value)
+			}
+
+		case op.RelJumpIfFalse:
+			condition := stack.Pop()
+			if !condition.ToBool() {
 				pc += int(ins.Arg.(*gvalue.Number).Value)
 			}
 

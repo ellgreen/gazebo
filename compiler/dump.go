@@ -7,7 +7,7 @@ import (
 
 func Dump(code []op.Instruction) {
 	for idx, ins := range code {
-		pretty.Printf("%6d %10s (%d) %# v\n",
+		pretty.Printf("%6d %18s (%d) %# v\n",
 			idx,
 			ins.Opcode.String(),
 			ins.Opcode,

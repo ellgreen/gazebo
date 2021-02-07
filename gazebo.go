@@ -1,20 +1,24 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler"
 	"github.com/johnfrankmorgan/gazebo/interpreter"
 )
 
-func main() {
-	assert.True(len(os.Args) == 2)
+var (
+	file string
+)
 
-	infile := os.Args[1]
-	source, err := ioutil.ReadFile(infile)
+func main() {
+	flag.StringVar(&file, "file", "tests/gaz/while.gaz", "file to run")
+	flag.Parse()
+
+	source, err := ioutil.ReadFile(file)
 	assert.Nil(err, "ioutil.ReadFile: %v", err)
 
 	code := compiler.Compile(string(source))
