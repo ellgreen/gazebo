@@ -46,7 +46,9 @@ func compile(exp *sexp) []op.Instruction {
 		return atom(exp.value)
 	}
 
-	assert.True(len(exp.children) > 0)
+	if len(exp.children) == 0 {
+		return []op.Instruction{}
+	}
 
 	switch exp.children[0].value {
 	case "let":
