@@ -61,6 +61,15 @@ func (m *Interpreter) Eval(code []op.Instruction) gvalue.Instance {
 			fun := stack.Pop()
 			stack.Push(fun.(gvalue.Func).Call(args))
 
+		case op.RelJump:
+			condition := stack.Pop()
+			if condition.ToBool() {
+				pc += int(ins.Arg.(*gvalue.Number).Value)
+			}
+
+		case op.RelJumpCond:
+			pc += int(ins.Arg.(*gvalue.Number).Value)
+
 		default:
 			assert.Unreached()
 		}

@@ -5,6 +5,7 @@ import "github.com/johnfrankmorgan/gazebo/assert"
 // Instance is the interface satisfied by all gazebo values
 type Instance interface {
 	ToString() string
+	ToBool() bool
 	Interface() interface{}
 }
 

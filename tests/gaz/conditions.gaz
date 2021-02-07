@@ -1,0 +1,14 @@
+(
+  if true (
+    println "true path"
+  ) (
+    println "false path"
+  )
+)
+(
+  if (! nil) (
+    println "true path"
+  ) (
+    println "false path"
+  )
+)

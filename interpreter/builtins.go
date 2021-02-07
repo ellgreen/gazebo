@@ -12,6 +12,11 @@ var builtins = map[string]gvalue.Instance{
 	"nil":   gvalue.New(nil),
 	"true":  gvalue.New(true),
 	"false": gvalue.New(false),
+	"!": gvalue.Builtin("!", func(args []gvalue.Instance) gvalue.Instance {
+		assert.True(len(args) == 1)
+
+		return gvalue.New(!args[0].ToBool())
+	}),
 	"+": gvalue.Builtin("+", func(args []gvalue.Instance) gvalue.Instance {
 		var sum float64
 

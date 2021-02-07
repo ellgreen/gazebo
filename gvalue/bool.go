@@ -11,6 +11,10 @@ func (m *Bool) ToString() string {
 	return fmt.Sprintf("%v", m.Value)
 }
 
+func (m *Bool) ToBool() bool {
+	return m.Value
+}
+
 func (m *Bool) Interface() interface{} {
 	return m.Value
 }

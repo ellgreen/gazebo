@@ -48,7 +48,8 @@ func compile(exp *sexp) []op.Instruction {
 
 	assert.True(len(exp.children) > 0)
 
-	if exp.children[0].value == "let" {
+	switch exp.children[0].value {
+	case "let":
 		assert.True(len(exp.children) == 3, "%# v", exp.children)
 		assert.True(exp.children[1].isAtom())
 
@@ -56,6 +57,27 @@ func compile(exp *sexp) []op.Instruction {
 			compile(exp.children[2]),
 			op.StoreName.Instruction(gvalue.New(exp.children[1].value)),
 		)
+
+	case "if":
+		assert.True(len(exp.children) == 4, "%# v", exp.children)
+
+		condition := exp.children[1]
+
+		truePath := compile(exp.children[2])
+
+		falsePath := append(
+			compile(exp.children[3]),
+			op.RelJump.Instruction(gvalue.New(len(truePath))),
+		)
+
+		code := append(
+			compile(condition),
+			op.RelJumpCond.Instruction(gvalue.New(len(falsePath))),
+		)
+
+		code = append(code, falsePath...)
+
+		return append(code, truePath...)
 	}
 
 	fun := compile(exp.children[0])

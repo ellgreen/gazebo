@@ -17,6 +17,10 @@ func (m builtin) ToString() string {
 	return fmt.Sprintf("Builtin function %p", m.f)
 }
 
+func (m builtin) ToBool() bool {
+	return true
+}
+
 func (m builtin) Interface() interface{} {
 	return m.f
 }
