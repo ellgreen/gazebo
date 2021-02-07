@@ -1,14 +1,24 @@
 (
   if true (
-    println "true path"
+    println "true true path"
   ) (
-    println "false path"
+    println "true false path"
+  )
+)
+(
+  if false (
+    println "false true path"
+  ) (
+    println "false false path"
   )
 )
 (
   if (! nil) (
-    println "true path"
+    println "!nil true path"
   ) (
-    println "false path"
+    println "!nil false path"
   )
 )
+(let true false)
+(debugln true)
+(if true (println "true true path") (println "true false path"))
