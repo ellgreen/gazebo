@@ -15,7 +15,7 @@ var (
 )
 
 func main() {
-	flag.StringVar(&file, "file", "tests/gaz/while.gaz", "file to run")
+	flag.StringVar(&file, "file", "", "file to run")
 	flag.Parse()
 
 	source, err := ioutil.ReadFile(file)
