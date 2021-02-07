@@ -1,0 +1,4 @@
+(let x 5)
+(let y 15)
+(let y 18)
+(printf "x: %d, y: %d\n" x y)
