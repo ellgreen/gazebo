@@ -26,6 +26,33 @@ var builtins = map[string]gvalue.Instance{
 
 		return gvalue.New(sum)
 	}),
+	"-": gvalue.Builtin("-", func(args []gvalue.Instance) gvalue.Instance {
+		var sum float64
+
+		for _, arg := range args {
+			sum -= arg.(*gvalue.Number).Value
+		}
+
+		return gvalue.New(sum)
+	}),
+	"*": gvalue.Builtin("*", func(args []gvalue.Instance) gvalue.Instance {
+		var sum float64
+
+		for _, arg := range args {
+			sum *= arg.(*gvalue.Number).Value
+		}
+
+		return gvalue.New(sum)
+	}),
+	"/": gvalue.Builtin("/", func(args []gvalue.Instance) gvalue.Instance {
+		var sum float64
+
+		for _, arg := range args {
+			sum /= arg.(*gvalue.Number).Value
+		}
+
+		return gvalue.New(sum)
+	}),
 	"printf": gvalue.Builtin("printf", func(args []gvalue.Instance) gvalue.Instance {
 		assert.True(len(args) > 0)
 
