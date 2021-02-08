@@ -5,7 +5,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/johnfrankmorgan/gazebo/assert"
 )
@@ -91,7 +90,7 @@ func (m *Compiler) Compile(source string) Code {
 		parser parser
 	)
 
-	expr := parser.parse(parser.split(source))
+	expr := parser.parse(parser.tokenize(source))
 
 	for _, expr := range expr.children {
 		code = append(code, m.compile(expr)...)
@@ -147,7 +146,7 @@ func (m *Compiler) compile(expr *sexpr) Code {
 	}
 
 	if !expr.children[0].isAtom() {
-		code := make(Code, 0)
+		code := Code{}
 
 		for _, expr := range expr.children {
 			code = append(code, m.compile(expr)...)
@@ -187,7 +186,6 @@ func (m *Compiler) atom(value string) Code {
 
 	case regexes.strings.MatchString(value):
 		value = value[1 : len(value)-1]
-		value = strings.ReplaceAll(value, "\\n", "\n")
 		return Code{OpLoadConst.Ins(value)}
 
 	case regexes.idents.MatchString(value):

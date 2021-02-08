@@ -31,13 +31,12 @@ func (m *parser) next() string {
 	return token
 }
 
-func (m *parser) split(source string) []string {
+func (m *parser) tokenize(source string) []string {
 	normalize := func(tokens []string) []string {
 		parsed := make([]string, 0)
 
 		for _, tk := range tokens {
-			tk = strings.TrimSpace(tk)
-			if tk != "" {
+			if tk = strings.TrimSpace(tk); tk != "" {
 				parsed = append(parsed, tk)
 			}
 		}
