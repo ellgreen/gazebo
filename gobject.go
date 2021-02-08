@@ -19,6 +19,43 @@ func (m *GFuncCtx) ExpectsAtLeast(argc int) {
 	assert.True(len(m.Args) >= argc, "expected at least %d arguments, got %d", argc, len(m.Args))
 }
 
+func (m *GFuncCtx) Self() *GObject {
+	assert.True(len(m.Args) > 0)
+	return m.Args[0]
+}
+
+func (m *GFuncCtx) Parse(args ...interface{}) {
+	assert.True(len(m.Args) >= len(args))
+
+	for i, arg := range args {
+		value := m.Args[i].Value
+
+		switch arg := arg.(type) {
+		case *bool:
+			*arg = value.(bool)
+
+		case *float64:
+			*arg = value.(float64)
+
+		case *string:
+			*arg = value.(string)
+
+		default:
+			assert.Unreached("cannot parse arg type %T", arg)
+		}
+	}
+}
+
+func (m *GFuncCtx) Interfaces() []interface{} {
+	ifaces := make([]interface{}, len(m.Args))
+
+	for i, arg := range m.Args {
+		ifaces[i] = arg.Value
+	}
+
+	return ifaces
+}
+
 type GFunc func(*GFuncCtx) *GObject
 
 type GType int
