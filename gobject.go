@@ -6,20 +6,20 @@ import (
 	"github.com/johnfrankmorgan/gazebo/assert"
 )
 
-type GFuncArgCtx struct {
+type GFuncCtx struct {
 	VM   *VM
 	Args []*GObject
 }
 
-func (m *GFuncArgCtx) Expects(argc int) {
+func (m *GFuncCtx) Expects(argc int) {
 	assert.Len(m.Args, argc, "expected %d arguments, got %d", argc, len(m.Args))
 }
 
-func (m *GFuncArgCtx) ExpectsAtLeast(argc int) {
+func (m *GFuncCtx) ExpectsAtLeast(argc int) {
 	assert.True(len(m.Args) >= argc, "expected at least %d arguments, got %d", argc, len(m.Args))
 }
 
-type GFunc func(*GFuncArgCtx) *GObject
+type GFunc func(*GFuncCtx) *GObject
 
 type GType int
 
@@ -60,7 +60,7 @@ func NewGObjectInferred(val interface{}) *GObject {
 		val = strings.ReplaceAll(val, "\\n", "\n")
 		return &GObject{Type: gtypes.String, Value: val}
 
-	case func(*GFuncArgCtx) *GObject:
+	case func(*GFuncCtx) *GObject:
 		return &GObject{Type: gtypes.Func, Value: GFunc(val)}
 
 	case GFunc:

@@ -10,7 +10,7 @@ var gbuiltins = map[string]*GObject{
 	"nil":   NewGObjectInferred(nil),
 	"true":  NewGObjectInferred(true),
 	"false": NewGObjectInferred(false),
-	"printf": NewGObjectInferred(func(ctx *GFuncArgCtx) *GObject {
+	"printf": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
 		ctx.ExpectsAtLeast(1)
 		assert.True(ctx.Args[0].Type == gtypes.String)
 

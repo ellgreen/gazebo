@@ -124,7 +124,7 @@ func (m *VM) Run(code Code) *GObject {
 			}
 
 			fun := m.stack.pop()
-			ctx := &GFuncArgCtx{VM: m, Args: args}
+			ctx := &GFuncCtx{VM: m, Args: args}
 
 			assert.True(fun.Type == gtypes.Func)
 
