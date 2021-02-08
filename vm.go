@@ -1,6 +1,8 @@
 package gazebo
 
-import "github.com/johnfrankmorgan/gazebo/assert"
+import (
+	"github.com/johnfrankmorgan/gazebo/assert"
+)
 
 type stack struct {
 	values []*GObject
@@ -74,4 +76,83 @@ func (m *env) assign(name string, value *GObject) {
 
 type VM struct {
 	stack *stack
+	env   *env
+}
+
+func NewVM() *VM {
+	env := &env{values: map[string]*GObject{}}
+
+	for name, builtin := range gbuiltins {
+		env.define(name, builtin)
+	}
+
+	return &VM{
+		stack: &stack{},
+		env:   env,
+	}
+}
+
+func (m *VM) Run(code Code) *GObject {
+	var pc int
+
+	for pc < len(code) {
+		ins := code[pc]
+		pc++
+
+		switch ins.Opcode {
+		case OpLoadConst:
+			m.stack.push(NewGObjectInferred(ins.Arg))
+
+		case OpStoreName:
+			name := ins.Arg.(string)
+			if m.env.defined(name) {
+				m.env.assign(name, m.stack.pop())
+			} else {
+				m.env.define(name, m.stack.pop())
+			}
+
+		case OpLoadName:
+			name := ins.Arg.(string)
+			m.stack.push(m.env.lookup(name))
+
+		case OpCallFunc:
+			argc := ins.Arg.(int)
+			args := make([]*GObject, argc)
+
+			for i := 0; i < argc; i++ {
+				args[argc-i-1] = m.stack.pop()
+			}
+
+			fun := m.stack.pop()
+			ctx := &GFuncArgCtx{VM: m, Args: args}
+
+			assert.True(fun.Type == gtypes.Func)
+
+			m.stack.push(fun.Value.(GFunc)(ctx))
+
+		case OpRelJump:
+			pc += ins.Arg.(int)
+
+		case OpRelJumpIfTrue:
+			condition := m.stack.pop()
+			if condition.IsTruthy() {
+				pc += ins.Arg.(int)
+			}
+
+		case OpRelJumpIfFalse:
+			condition := m.stack.pop()
+			if !condition.IsTruthy() {
+				pc += ins.Arg.(int)
+			}
+
+		default:
+			assert.Unreached("unknown instruction: %v", ins)
+		}
+	}
+
+	if m.stack.size() > 0 {
+		return m.stack.pop()
+	}
+
+	return nil
 }

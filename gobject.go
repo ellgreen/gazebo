@@ -1,13 +1,13 @@
 package gazebo
 
 import (
-	"fmt"
+	"strings"
 
 	"github.com/johnfrankmorgan/gazebo/assert"
 )
 
 type GFuncArgCtx struct {
-	VM   interface{}
+	VM   *VM
 	Args []*GObject
 }
 
@@ -19,125 +19,26 @@ func (m *GFuncArgCtx) ExpectsAtLeast(argc int) {
 	assert.True(len(m.Args) >= argc, "expected at least %d arguments, got %d", argc, len(m.Args))
 }
 
-func (m *GFuncArgCtx) Self() *GObject {
-	return m.Args[0]
-}
-
 type GFunc func(*GFuncArgCtx) *GObject
 
-type GMethods map[string]GFunc
-
-type GType struct {
-	Name    string
-	Parent  *GType
-	Methods GMethods
-}
-
-func (m *GType) resolve(name string) GFunc {
-	if meth, ok := m.Methods[name]; ok {
-		return meth
-	}
-
-	if m.Parent != nil {
-		return m.Parent.resolve(name)
-	}
-
-	return nil
-}
-
-func (m *GType) Implements(name string) bool {
-	return m.resolve(name) != nil
-}
-
-var gtypemethods = struct {
-	toBool   string
-	toString string
-	toNumber string
-	isNil    string
-}{
-	toBool:   "?",
-	toString: "str",
-	toNumber: "num",
-	isNil:    "nil?",
-}
+type GType int
 
 var gtypes = struct {
-	init   func()
-	Object *GType
-	Nil    *GType
-	Bool   *GType
-	Number *GType
-	String *GType
+	Nil    GType
+	Bool   GType
+	Number GType
+	String GType
+	Func   GType
 }{
-	init: func() {
-		gtypes.Object = &GType{
-			Name: "Object",
-			Methods: GMethods{
-				gtypemethods.toBool: func(args *GFuncArgCtx) *GObject {
-					return NewGObjectInferred(true)
-				},
-
-				gtypemethods.toString: func(args *GFuncArgCtx) *GObject {
-					args.Expects(1)
-					self := args.Self()
-					str := fmt.Sprintf(
-						"<gtypes.%s %p>(%p %v)",
-						self.Type.Name,
-						self.Type,
-						self,
-						self.Value,
-					)
-					return NewGObjectInferred(str)
-				},
-
-				gtypemethods.toNumber: func(args *GFuncArgCtx) *GObject {
-					assert.Unreached("gtypemethods.toNumber not implemented")
-					return nil
-				},
-
-				gtypemethods.isNil: func(args *GFuncArgCtx) *GObject {
-					return NewGObjectInferred(false)
-				},
-			},
-		}
-
-		gtypes.Nil = &GType{
-			Name: "Nil",
-			Methods: GMethods{
-				gtypemethods.toBool: func(args *GFuncArgCtx) *GObject {
-					return NewGObjectInferred(false)
-				},
-
-				gtypemethods.isNil: func(args *GFuncArgCtx) *GObject {
-					return NewGObjectInferred(true)
-				},
-			},
-		}
-
-		gtypes.Bool = &GType{
-			Name: "Bool",
-			Methods: GMethods{
-				gtypemethods.toBool: func(args *GFuncArgCtx) *GObject {
-					args.Expects(1)
-					return NewGObjectInferred(args.Self().Value.(bool))
-				},
-			},
-		}
-
-		gtypes.Number = &GType{
-			Name:    "Number",
-			Methods: GMethods{},
-		}
-
-		gtypes.String = &GType{
-			Name:    "String",
-			Methods: GMethods{},
-		}
-	},
+	Nil:    1,
+	Bool:   2,
+	Number: 3,
+	String: 4,
+	Func:   5,
 }
 
 type GObject struct {
-	Type  *GType
+	Type  GType
 	Value interface{}
 }
 
@@ -156,15 +57,39 @@ func NewGObjectInferred(val interface{}) *GObject {
 		return &GObject{Type: gtypes.Number, Value: val}
 
 	case string:
+		val = strings.ReplaceAll(val, "\\n", "\n")
 		return &GObject{Type: gtypes.String, Value: val}
+
+	case func(*GFuncArgCtx) *GObject:
+		return &GObject{Type: gtypes.Func, Value: GFunc(val)}
+
+	case GFunc:
+		return &GObject{Type: gtypes.Func, Value: val}
+
 	}
 
 	assert.Unreached("Could not infer type for %v", val)
 	return nil
 }
 
-func (m *GObject) Call(name string, args *GFuncArgCtx) *GObject {
-	method := m.Type.resolve(name)
-	assert.NotNil(method)
-	return method(args)
+func (m *GObject) IsTruthy() bool {
+	switch m.Type {
+	case gtypes.Nil:
+		return false
+
+	case gtypes.Bool:
+		return m.Value.(bool)
+
+	case gtypes.Number:
+		return m.Value.(float64) != 0
+
+	case gtypes.String:
+		return m.Value.(string) != ""
+
+	case gtypes.Func:
+		return true
+	}
+
+	assert.Unreached("unknown type: %d", m.Type)
+	return false
 }
