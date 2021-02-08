@@ -124,10 +124,9 @@ func (m *VM) Run(code Code) *GObject {
 			}
 
 			fun := m.stack.pop()
+			assert.True(fun.Type == gtypes.Func, "expected gtypes.Func, got gtypes.%s", fun.Type.Name)
+
 			ctx := &GFuncCtx{VM: m, Args: args}
-
-			assert.True(fun.Type == gtypes.Func)
-
 			m.stack.push(fun.Interface().(GFunc)(ctx))
 
 		case OpRelJump:

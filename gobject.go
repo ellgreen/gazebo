@@ -1,6 +1,7 @@
 package gazebo
 
 import (
+	"fmt"
 	"math"
 	"strings"
 
@@ -44,6 +45,9 @@ func (m *GFuncCtx) Parse(args ...interface{}) {
 		case *string:
 			*arg = value.(string)
 
+		case **GObject:
+			*arg = m.Args[i]
+
 		default:
 			assert.Unreached("cannot parse arg type %T", arg)
 		}
@@ -62,24 +66,103 @@ func (m *GFuncCtx) Interfaces() []interface{} {
 
 type GFunc func(*GFuncCtx) *GObject
 
-type GType int
+type GMethods map[string]GFunc
 
-var gtypes = struct {
-	Nil    GType
-	Bool   GType
-	Number GType
-	String GType
-	Func   GType
-}{
-	Nil:    1,
-	Bool:   2,
-	Number: 3,
-	String: 4,
-	Func:   5,
+type GType struct {
+	Name    string
+	Parent  *GType
+	Methods GMethods
+}
+
+func (m *GType) Resolve(name string) GFunc {
+	if method, ok := m.Methods[name]; ok {
+		return method
+	}
+
+	if m.Parent != nil {
+		return m.Parent.Resolve(name)
+	}
+
+	return nil
+}
+
+func (m *GType) Implements(name string) bool {
+	return m.Resolve(name) != nil
+}
+
+var gtypes struct {
+	Base   *GType
+	Nil    *GType
+	Bool   *GType
+	Number *GType
+	String *GType
+	Func   *GType
+}
+
+func init() {
+	gtypes.Base = &GType{
+		Name:   "Base",
+		Parent: nil,
+		Methods: GMethods{
+			"inspect": GFunc(func(ctx *GFuncCtx) *GObject {
+				self := ctx.Self()
+
+				inspection := fmt.Sprintf(
+					"<gtypes.%s %p>(%v %p)",
+					self.Type.Name,
+					self.Type,
+					self.Interface(),
+					self,
+				)
+
+				return NewGObjectInferred(inspection)
+			}),
+		},
+	}
+
+	gtypes.Nil = &GType{
+		Name:   "Nil",
+		Parent: gtypes.Base,
+	}
+
+	gtypes.Bool = &GType{
+		Name:   "Bool",
+		Parent: gtypes.Base,
+	}
+
+	gtypes.Number = &GType{
+		Name:   "Number",
+		Parent: gtypes.Base,
+	}
+
+	gtypes.String = &GType{
+		Name:   "String",
+		Parent: gtypes.Base,
+		Methods: GMethods{
+			"replace": GFunc(func(ctx *GFuncCtx) *GObject {
+				var (
+					self    string
+					search  string
+					replace string
+				)
+
+				ctx.Parse(&self, &search, &replace)
+
+				return NewGObjectInferred(strings.ReplaceAll(self, search, replace))
+			}),
+		},
+	}
+
+	gtypes.Func = &GType{
+		Name:   "Func",
+		Parent: gtypes.Base,
+	}
+
+	initbuiltins()
 }
 
 type GObject struct {
-	Type  GType
+	Type  *GType
 	Value interface{}
 }
 
@@ -138,4 +221,10 @@ func (m *GObject) IsTruthy() bool {
 
 	assert.Unreached("unknown type: %d", m.Type)
 	return false
+}
+
+func (m *GObject) Call(name string, ctx *GFuncCtx) *GObject {
+	assert.True(m.Type.Implements(name))
+
+	return m.Type.Resolve(name)(ctx)
 }

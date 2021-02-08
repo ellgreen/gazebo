@@ -4,130 +4,152 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+
+	"github.com/johnfrankmorgan/gazebo/assert"
 )
 
-var gbuiltins = map[string]*GObject{
-	"nil": NewGObjectInferred(nil),
+var gbuiltins map[string]*GObject
 
-	"true": NewGObjectInferred(true),
+func initbuiltins() {
+	gbuiltins = map[string]*GObject{
+		"nil": NewGObjectInferred(nil),
 
-	"false": NewGObjectInferred(false),
+		"true": NewGObjectInferred(true),
 
-	"printf": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		var format string
+		"false": NewGObjectInferred(false),
 
-		ctx.Parse(&format)
+		"printf": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var format string
 
-		fmt.Printf(format, ctx.Interfaces()[1:]...)
-		return NewGObjectInferred(nil)
-	}),
+			ctx.Parse(&format)
 
-	"println": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		fmt.Println(ctx.Interfaces()...)
-		return NewGObjectInferred(nil)
-	}),
+			fmt.Printf(format, ctx.Interfaces()[1:]...)
+			return NewGObjectInferred(nil)
+		}),
 
-	"=": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		ctx.ExpectsAtLeast(2)
+		"println": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			fmt.Println(ctx.Interfaces()...)
+			return NewGObjectInferred(nil)
+		}),
 
-		args := ctx.Interfaces()
+		"call": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var (
+				method string
+				self   *GObject
+			)
 
-		for _, arg := range args {
-			if !reflect.DeepEqual(args[0], arg) {
-				return NewGObjectInferred(false)
+			ctx.Parse(&method, &self)
+
+			assert.True(self.Type.Implements(method))
+
+			return self.Call(method, &GFuncCtx{
+				VM:   ctx.VM,
+				Args: ctx.Args[1:],
+			})
+		}),
+
+		"=": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			ctx.ExpectsAtLeast(2)
+
+			args := ctx.Interfaces()
+
+			for _, arg := range args {
+				if !reflect.DeepEqual(args[0], arg) {
+					return NewGObjectInferred(false)
+				}
 			}
-		}
 
-		return NewGObjectInferred(true)
-	}),
+			return NewGObjectInferred(true)
+		}),
 
-	"?": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		ctx.Expects(1)
+		"?": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			ctx.Expects(1)
 
-		return NewGObjectInferred(ctx.Self().IsTruthy())
-	}),
+			return NewGObjectInferred(ctx.Self().IsTruthy())
+		}),
 
-	"!": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		ctx.Expects(1)
+		"!": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			ctx.Expects(1)
 
-		return NewGObjectInferred(!ctx.Self().IsTruthy())
-	}),
+			return NewGObjectInferred(!ctx.Self().IsTruthy())
+		}),
 
-	">": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		var (
-			val1 float64
-			val2 float64
-		)
+		">": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var (
+				val1 float64
+				val2 float64
+			)
 
-		ctx.Parse(&val1, &val2)
+			ctx.Parse(&val1, &val2)
 
-		return NewGObjectInferred(val1 > val2)
-	}),
+			return NewGObjectInferred(val1 > val2)
+		}),
 
-	"<": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		var (
-			val1 float64
-			val2 float64
-		)
+		"<": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var (
+				val1 float64
+				val2 float64
+			)
 
-		ctx.Parse(&val1, &val2)
+			ctx.Parse(&val1, &val2)
 
-		return NewGObjectInferred(val1 < val2)
-	}),
+			return NewGObjectInferred(val1 < val2)
+		}),
 
-	"+": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		var (
-			val1 float64
-			val2 float64
-		)
+		"+": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var (
+				val1 float64
+				val2 float64
+			)
 
-		ctx.Parse(&val1, &val2)
+			ctx.Parse(&val1, &val2)
 
-		return NewGObjectInferred(val1 + val2)
-	}),
+			return NewGObjectInferred(val1 + val2)
+		}),
 
-	"-": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		var (
-			val1 float64
-			val2 float64
-		)
+		"-": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var (
+				val1 float64
+				val2 float64
+			)
 
-		ctx.Parse(&val1, &val2)
+			ctx.Parse(&val1, &val2)
 
-		return NewGObjectInferred(val1 - val2)
-	}),
+			return NewGObjectInferred(val1 - val2)
+		}),
 
-	"*": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		var (
-			val1 float64
-			val2 float64
-		)
+		"*": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var (
+				val1 float64
+				val2 float64
+			)
 
-		ctx.Parse(&val1, &val2)
+			ctx.Parse(&val1, &val2)
 
-		return NewGObjectInferred(val1 * val2)
+			return NewGObjectInferred(val1 * val2)
 
-	}),
+		}),
 
-	"/": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		var (
-			val1 float64
-			val2 float64
-		)
+		"/": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var (
+				val1 float64
+				val2 float64
+			)
 
-		ctx.Parse(&val1, &val2)
+			ctx.Parse(&val1, &val2)
 
-		return NewGObjectInferred(val1 / val2)
-	}),
+			return NewGObjectInferred(val1 / val2)
+		}),
 
-	"%": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
-		var (
-			val1 float64
-			val2 float64
-		)
+		"%": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+			var (
+				val1 float64
+				val2 float64
+			)
 
-		ctx.Parse(&val1, &val2)
+			ctx.Parse(&val1, &val2)
 
-		return NewGObjectInferred(math.Mod(val1, val2))
-	}),
+			return NewGObjectInferred(math.Mod(val1, val2))
+		}),
+	}
 }

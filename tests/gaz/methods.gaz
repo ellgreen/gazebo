@@ -1,0 +1,6 @@
+(
+  (println (call "inspect" nil))
+  (println (call "inspect" (+ 500 23)))
+  (let str "foobar")
+  (println (call "replace" str "foo" "bar"))
+)

@@ -70,7 +70,7 @@ func (m *parser) subexpr(start int) []string {
 		}
 	}
 
-	assert.Unreached()
+	assert.Unreached("unexpected eof")
 	return nil
 }
 
