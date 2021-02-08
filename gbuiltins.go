@@ -22,6 +22,11 @@ var gbuiltins = map[string]*GObject{
 		return NewGObjectInferred(nil)
 	}),
 
+	"println": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
+		fmt.Println(ctx.Interfaces()...)
+		return NewGObjectInferred(nil)
+	}),
+
 	"=": NewGObjectInferred(func(ctx *GFuncCtx) *GObject {
 		ctx.ExpectsAtLeast(2)
 

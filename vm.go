@@ -128,7 +128,7 @@ func (m *VM) Run(code Code) *GObject {
 
 			assert.True(fun.Type == gtypes.Func)
 
-			m.stack.push(fun.Value.(GFunc)(ctx))
+			m.stack.push(fun.Interface().(GFunc)(ctx))
 
 		case OpRelJump:
 			pc += ins.Arg.(int)

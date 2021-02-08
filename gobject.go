@@ -1,6 +1,7 @@
 package gazebo
 
 import (
+	"math"
 	"strings"
 
 	"github.com/johnfrankmorgan/gazebo/assert"
@@ -34,6 +35,9 @@ func (m *GFuncCtx) Parse(args ...interface{}) {
 		case *bool:
 			*arg = value.(bool)
 
+		case *int:
+			*arg = int(value.(float64))
+
 		case *float64:
 			*arg = value.(float64)
 
@@ -50,7 +54,7 @@ func (m *GFuncCtx) Interfaces() []interface{} {
 	ifaces := make([]interface{}, len(m.Args))
 
 	for i, arg := range m.Args {
-		ifaces[i] = arg.Value
+		ifaces[i] = arg.Interface()
 	}
 
 	return ifaces
@@ -100,13 +104,18 @@ func NewGObjectInferred(val interface{}) *GObject {
 	case func(*GFuncCtx) *GObject:
 		return &GObject{Type: gtypes.Func, Value: GFunc(val)}
 
-	case GFunc:
-		return &GObject{Type: gtypes.Func, Value: val}
-
 	}
 
-	assert.Unreached("Could not infer type for %v", val)
+	assert.Unreached("Could not infer type for %T %v", val, val)
 	return nil
+}
+
+func (m *GObject) Interface() interface{} {
+	if value, ok := m.Value.(float64); ok && math.Mod(value, 1) == 0 {
+		return int(value)
+	}
+
+	return m.Value
 }
 
 func (m *GObject) IsTruthy() bool {
