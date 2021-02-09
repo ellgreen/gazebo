@@ -1,0 +1,18 @@
+(
+  (println "Hello world!")
+
+  (let var (* 15 234.32))
+  (printf "(* 15 234.32) = %f\n" var)
+
+  (printf "(? nil) = %v\n" (? nil))
+
+  (
+    fun square (x) (
+      (* x x)
+    )
+  )
+
+  (println (call "inspect" square))
+
+  (printf "(square 19.22) = %f\n" (square 19.22))
+)

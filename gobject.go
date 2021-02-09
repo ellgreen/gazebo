@@ -180,7 +180,7 @@ func init() {
 
 	gtypes.UserFunc = &GType{
 		Name:   "UserFunc",
-		Parent: gtypes.UserFunc,
+		Parent: gtypes.Base,
 	}
 
 	gtypes.Internal = &GType{
