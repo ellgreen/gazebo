@@ -12,3 +12,10 @@
 )
 
 (println (f2 5))
+
+(
+  fun greet (name) (
+    (printf "Hello, %s!\n" name)
+  )
+)
+(greet "Frank")

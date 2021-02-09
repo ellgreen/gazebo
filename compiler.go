@@ -162,7 +162,14 @@ func (m *Compiler) compile(expr *sexpr) Code {
 			return append(code, OpMakeFunc.Ins(len(params)))
 
 		} else if len(expr.children) == 4 {
-			assert.Unreached("not implemented")
+			assert.True(expr.children[1].isAtom(), "function name must be a valid identity")
+			name := expr.children[1].value
+			params := expr.children[2]
+			body := expr.children[3]
+			return append(
+				m.compile(&sexpr{children: []*sexpr{{value: "fun"}, params, body}}),
+				OpStoreName.Ins(name),
+			)
 		}
 
 		assert.Unreached("fun keyword should contain 3 or 4 children, got %d", len(expr.children))
