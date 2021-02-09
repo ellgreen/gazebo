@@ -15,4 +15,14 @@
   (println (call "inspect" square))
 
   (printf "(square 19.22) = %f\n" (square 19.22))
+
+  (if (= 25 (square 5)) (
+    (println "nailed it!")
+    (printf "(= 15 (+ 10 2)) = %v\n" (= 15 (+ 10 2)))
+  ) (
+    (println "something isn't quite right...")
+  ))
+
+  (println (? square))
+  (println (? "test"))
 )
