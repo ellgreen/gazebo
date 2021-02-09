@@ -73,6 +73,13 @@ func (m *GFuncCtx) Interfaces() []interface{} {
 // GFunc is the type of gazebo's builtin functions
 type GFunc func(*GFuncCtx) *GObject
 
+// GUserFunc is the type of values store in a gtypes.UserFunc instance
+type GUserFunc struct {
+	params []string
+	body   Code
+	env    *env
+}
+
 // GMethods is a map of names to GFuncs
 type GMethods map[string]GFunc
 
@@ -102,12 +109,14 @@ func (m *GType) Implements(name string) bool {
 }
 
 var gtypes struct {
-	Base   *GType
-	Nil    *GType
-	Bool   *GType
-	Number *GType
-	String *GType
-	Func   *GType
+	Base     *GType
+	Nil      *GType
+	Bool     *GType
+	Number   *GType
+	String   *GType
+	Func     *GType
+	UserFunc *GType
+	Internal *GType
 }
 
 func init() {
@@ -166,6 +175,16 @@ func init() {
 
 	gtypes.Func = &GType{
 		Name:   "Func",
+		Parent: gtypes.Base,
+	}
+
+	gtypes.UserFunc = &GType{
+		Name:   "UserFunc",
+		Parent: gtypes.UserFunc,
+	}
+
+	gtypes.Internal = &GType{
+		Name:   "Internal",
 		Parent: gtypes.Base,
 	}
 
@@ -230,7 +249,7 @@ func (m *GObject) IsTruthy() bool {
 	case gtypes.String:
 		return m.Value.(string) != ""
 
-	case gtypes.Func:
+	case gtypes.Func, gtypes.UserFunc:
 		return true
 	}
 

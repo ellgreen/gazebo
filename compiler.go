@@ -22,6 +22,8 @@ const (
 	OpRelJump
 	OpRelJumpIfTrue
 	OpRelJumpIfFalse
+	OpPushValue
+	OpMakeFunc
 )
 
 // Ins creates an Instruction for an Opcode
@@ -39,6 +41,8 @@ func (op Opcode) Name() string {
 		OpRelJump:        "OpRelJump",
 		OpRelJumpIfTrue:  "OpRelJumpIfTrue",
 		OpRelJumpIfFalse: "OpRelJumpIfFalse",
+		OpPushValue:      "OpPushValue",
+		OpMakeFunc:       "OpMakeFunc",
 	}
 
 	if name, ok := names[op]; ok {
@@ -143,6 +147,25 @@ func (m *Compiler) compile(expr *sexpr) Code {
 			OpRelJump.Ins(-len(body)-len(cond)-1),
 		)
 		return append(cond, body...)
+
+	case "fun":
+		if len(expr.children) == 3 {
+			params := []string{}
+			for _, param := range expr.children[1].children {
+				assert.True(param.isAtom(), "function parameters must be identities")
+				params = append(params, param.value)
+			}
+			code := Code{
+				OpPushValue.Ins(params),
+				OpPushValue.Ins(m.compile(expr.children[2])),
+			}
+			return append(code, OpMakeFunc.Ins(len(params)))
+
+		} else if len(expr.children) == 4 {
+			assert.Unreached("not implemented")
+		}
+
+		assert.Unreached("fun keyword should contain 3 or 4 children, got %d", len(expr.children))
 	}
 
 	if !expr.children[0].isAtom() {
@@ -174,7 +197,7 @@ func (m *Compiler) atom(value string) Code {
 	}{
 		numbers: regexp.MustCompile(`^-?[0-9]+(.[0-9]+)?$`),
 		strings: regexp.MustCompile(`^".*"$`),
-		idents:  regexp.MustCompile(`^[a-zA-Z!@$%^&*\/?<>_=+~-]+$`),
+		idents:  regexp.MustCompile(`^[a-zA-Z0-9!@$%^&*\/?<>_=+~-]+$`),
 	}
 
 	switch true {
