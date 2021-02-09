@@ -1,6 +1,10 @@
 package assert
 
-import "github.com/kr/pretty"
+import (
+	"reflect"
+
+	"github.com/kr/pretty"
+)
 
 // Error is panicked with when an assertion fails
 type Error struct {
@@ -46,6 +50,15 @@ func Nil(value interface{}, args ...interface{}) {
 // NotNil asserts a value is not nil
 func NotNil(value interface{}, args ...interface{}) {
 	if value == nil {
+		fail(args...)
+	}
+}
+
+// Len asserts that a slice has the expected length
+func Len(value interface{}, expected int, args ...interface{}) {
+	val := reflect.ValueOf(value)
+
+	if val.Len() != expected {
 		fail(args...)
 	}
 }

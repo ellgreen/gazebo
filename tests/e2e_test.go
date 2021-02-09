@@ -5,8 +5,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/johnfrankmorgan/gazebo/compiler"
-	"github.com/johnfrankmorgan/gazebo/interpreter"
+	"github.com/johnfrankmorgan/gazebo"
 )
 
 const TestScripts = "../tests/gaz"
@@ -24,10 +23,9 @@ func TestGazScripts(t *testing.T) {
 				t.Error(err)
 			}
 
-			code := compiler.Compile(string(source))
+			code := gazebo.Compile(string(source))
 
-			interpreter.Create()
-			interpreter.The().Eval(code)
+			gazebo.NewVM().Run(code)
 		})
 	}
 }

@@ -20,5 +20,5 @@
   )
 )
 (let true false)
-(debugln true)
+(println (? true))
 (if true (println "true true path") (println "true false path"))

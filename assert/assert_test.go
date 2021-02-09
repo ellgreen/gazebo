@@ -38,6 +38,14 @@ func TestNotNil(t *testing.T) {
 	})
 }
 
+func TestLen(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Panics(func() {
+		Len([]string{""}, 2)
+	})
+}
+
 func TestUnreached(t *testing.T) {
 	assert := assert.New(t)
 
