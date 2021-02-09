@@ -1,0 +1,22 @@
+name: Format
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+
+      - name: Format
+        run: |
+          go get -u golang.org/x/tools/cmd/goimports
+          ~/go/bin/goimports -l .
