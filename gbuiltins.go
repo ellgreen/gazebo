@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-
-	"github.com/johnfrankmorgan/gazebo/assert"
 )
 
 var gbuiltins map[string]*GObject
@@ -39,8 +37,6 @@ func initbuiltins() {
 			)
 
 			ctx.Parse(&method, &self)
-
-			assert.True(self.Type.Implements(method))
 
 			return self.Call(method, &GFuncCtx{
 				VM:   ctx.VM,

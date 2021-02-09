@@ -22,12 +22,12 @@ func (m *GFuncCtx) ExpectsAtLeast(argc int) {
 }
 
 func (m *GFuncCtx) Self() *GObject {
-	assert.True(len(m.Args) > 0)
+	assert.True(len(m.Args) > 0, "expected self argument, got 0 arguments")
 	return m.Args[0]
 }
 
 func (m *GFuncCtx) Parse(args ...interface{}) {
-	assert.True(len(m.Args) >= len(args))
+	assert.True(len(m.Args) >= len(args), "too few arguments to parse")
 
 	for i, arg := range args {
 		value := m.Args[i].Value
@@ -219,12 +219,12 @@ func (m *GObject) IsTruthy() bool {
 		return true
 	}
 
-	assert.Unreached("unknown type: %d", m.Type)
+	assert.Unreached("unknown type: %#v", m.Type)
 	return false
 }
 
 func (m *GObject) Call(name string, ctx *GFuncCtx) *GObject {
-	assert.True(m.Type.Implements(name))
+	assert.True(m.Type.Implements(name), "type %s doesn't implement %s", m.Type.Name, name)
 
 	return m.Type.Resolve(name)(ctx)
 }
