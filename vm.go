@@ -74,11 +74,13 @@ func (m *env) assign(name string, value *GObject) {
 	assert.Unreached("undefined name %q", name)
 }
 
+// VM is the structure responsible for running code and keeping track of state
 type VM struct {
 	stack *stack
 	env   *env
 }
 
+// NewVM creates a new VM
 func NewVM() *VM {
 	env := &env{values: map[string]*GObject{}}
 
@@ -92,6 +94,7 @@ func NewVM() *VM {
 	}
 }
 
+// Run runs the provided code
 func (m *VM) Run(code Code) *GObject {
 	var pc int
 
