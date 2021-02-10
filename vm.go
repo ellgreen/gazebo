@@ -127,10 +127,26 @@ func (m *VM) Run(code Code) *GObject {
 			}
 
 			fun := m.stack.pop()
-			assert.True(fun.Type == gtypes.Func, "expected gtypes.Func, got gtypes.%s", fun.Type.Name)
 
-			ctx := &GFuncCtx{VM: m, Args: args}
-			m.stack.push(fun.Interface().(GFunc)(ctx))
+			switch fun.Type {
+			case gtypes.Func:
+				ctx := &GFuncCtx{VM: m, Args: args}
+				m.stack.push(fun.Interface().(GFunc)(ctx))
+
+			case gtypes.UserFunc:
+				guserfunc := fun.Value.(GUserFunc)
+				vmenv := m.env
+				env := &env{values: map[string]*GObject{}, parent: guserfunc.env}
+				for i, param := range guserfunc.params {
+					env.values[param] = args[i]
+				}
+				m.env = env
+				m.stack.push(m.Run(guserfunc.body))
+				m.env = vmenv
+
+			default:
+				assert.Unreached("unexpected type called as function: gtypes.%s", fun.Type.Name)
+			}
 
 		case OpRelJump:
 			pc += ins.Arg.(int)
@@ -146,6 +162,21 @@ func (m *VM) Run(code Code) *GObject {
 			if !condition.IsTruthy() {
 				pc += ins.Arg.(int)
 			}
+
+		case OpPushValue:
+			m.stack.push(&GObject{Type: gtypes.Internal, Value: ins.Arg})
+
+		case OpMakeFunc:
+			body := m.stack.pop().Interface().(Code)
+			params := m.stack.pop().Interface().([]string)
+			m.stack.push(&GObject{
+				Type: gtypes.UserFunc,
+				Value: GUserFunc{
+					params: params,
+					body:   body,
+					env:    m.env,
+				},
+			})
 
 		default:
 			assert.Unreached("unknown instruction: %v", ins)
