@@ -167,8 +167,8 @@ func (m *VM) Run(code Code) *GObject {
 			m.stack.push(&GObject{Type: gtypes.Internal, Value: ins.Arg})
 
 		case OpMakeFunc:
-			body := m.stack.pop().Value.(Code)
-			params := m.stack.pop().Value.([]string)
+			body := m.stack.pop().Interface().(Code)
+			params := m.stack.pop().Interface().([]string)
 			m.stack.push(&GObject{
 				Type: gtypes.UserFunc,
 				Value: GUserFunc{
