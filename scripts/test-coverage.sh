@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 
-if [[ -z $1 ]]
+set -e
+
+package=$1
+
+if [[ -z $package ]]
 then
-  printf "Usage: %s PACKAGE\n" $0
-  exit 1
+  package=./...
 fi
 
 coverprofile="/tmp/go-cover.$$.tmp"
 
-go test -coverpkg=$1 -coverprofile=$coverprofile $1 && go tool cover -html=$coverprofile && unlink $coverprofile
+go test -v -coverpkg=$package -coverprofile=$coverprofile $package
+go tool cover -html=$coverprofile
+unlink $coverprofile
