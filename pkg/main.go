@@ -7,6 +7,7 @@ import (
 
 	"github.com/johnfrankmorgan/gazebo"
 	"github.com/johnfrankmorgan/gazebo/assert"
+	"github.com/johnfrankmorgan/gazebo/compiler"
 )
 
 func main() {
@@ -15,7 +16,7 @@ func main() {
 	source, err := ioutil.ReadFile(os.Args[1])
 	assert.Nil(err)
 
-	code := gazebo.Compile(string(source))
+	code := compiler.Compile(string(source))
 	code.Dump()
 
 	fmt.Print("\n\n")
