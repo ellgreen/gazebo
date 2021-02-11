@@ -2,6 +2,8 @@ package gazebo
 
 import (
 	"github.com/johnfrankmorgan/gazebo/assert"
+	"github.com/johnfrankmorgan/gazebo/compiler"
+	"github.com/johnfrankmorgan/gazebo/compiler/op"
 )
 
 type stack struct {
@@ -95,7 +97,7 @@ func NewVM() *VM {
 }
 
 // Run runs the provided code
-func (m *VM) Run(code Code) *GObject {
+func (m *VM) Run(code compiler.Code) *GObject {
 	var pc int
 
 	for pc < len(code) {
@@ -103,10 +105,10 @@ func (m *VM) Run(code Code) *GObject {
 		pc++
 
 		switch ins.Opcode {
-		case OpLoadConst:
+		case op.LoadConst:
 			m.stack.push(NewGObjectInferred(ins.Arg))
 
-		case OpStoreName:
+		case op.StoreName:
 			name := ins.Arg.(string)
 			if m.env.defined(name) {
 				m.env.assign(name, m.stack.pop())
@@ -114,11 +116,11 @@ func (m *VM) Run(code Code) *GObject {
 				m.env.define(name, m.stack.pop())
 			}
 
-		case OpLoadName:
+		case op.LoadName:
 			name := ins.Arg.(string)
 			m.stack.push(m.env.lookup(name))
 
-		case OpCallFunc:
+		case op.CallFunc:
 			argc := ins.Arg.(int)
 			args := make([]*GObject, argc)
 
@@ -148,26 +150,26 @@ func (m *VM) Run(code Code) *GObject {
 				assert.Unreached("unexpected type called as function: gtypes.%s", fun.Type.Name)
 			}
 
-		case OpRelJump:
+		case op.RelJump:
 			pc += ins.Arg.(int)
 
-		case OpRelJumpIfTrue:
+		case op.RelJumpIfTrue:
 			condition := m.stack.pop()
 			if condition.IsTruthy() {
 				pc += ins.Arg.(int)
 			}
 
-		case OpRelJumpIfFalse:
+		case op.RelJumpIfFalse:
 			condition := m.stack.pop()
 			if !condition.IsTruthy() {
 				pc += ins.Arg.(int)
 			}
 
-		case OpPushValue:
+		case op.PushValue:
 			m.stack.push(&GObject{Type: gtypes.Internal, Value: ins.Arg})
 
-		case OpMakeFunc:
-			body := m.stack.pop().Interface().(Code)
+		case op.MakeFunc:
+			body := m.stack.pop().Interface().(compiler.Code)
 			params := m.stack.pop().Interface().([]string)
 			m.stack.push(&GObject{
 				Type: gtypes.UserFunc,

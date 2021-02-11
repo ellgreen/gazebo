@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/johnfrankmorgan/gazebo/assert"
+	"github.com/johnfrankmorgan/gazebo/compiler"
 )
 
 // GFuncCtx is used to pass arguments to builtin gazebo functions
@@ -76,7 +77,7 @@ type GFunc func(*GFuncCtx) *GObject
 // GUserFunc is the type of values store in a gtypes.UserFunc instance
 type GUserFunc struct {
 	params []string
-	body   Code
+	body   compiler.Code
 	env    *env
 }
 
