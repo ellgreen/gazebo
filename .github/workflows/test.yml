@@ -18,4 +18,5 @@ jobs:
 
       - name: Test
         run: |
-          go test -coverpkg=./... -cover ./...
+          go test -v -coverpkg=./... -coverprofile=/tmp/profile.cov ./...
+          go tool cover -func /tmp/profile.cov

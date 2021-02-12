@@ -19,4 +19,10 @@ jobs:
       - name: Format
         run: |
           go get -u golang.org/x/tools/cmd/goimports
-          ~/go/bin/goimports -l .
+          errors=$(~/go/bin/goimports -l .)
+          if [[ ! -z $errors ]]
+          then
+            echo "Formatting errors!"
+            echo $errors
+            exit 1
+          fi

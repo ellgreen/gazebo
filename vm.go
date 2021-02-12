@@ -4,17 +4,18 @@ import (
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler"
 	"github.com/johnfrankmorgan/gazebo/compiler/op"
+	"github.com/johnfrankmorgan/gazebo/g"
 )
 
 type stack struct {
-	values []*GObject
+	values []g.Object
 }
 
-func (m *stack) push(value *GObject) {
+func (m *stack) push(value g.Object) {
 	m.values = append(m.values, value)
 }
 
-func (m *stack) pop() *GObject {
+func (m *stack) pop() g.Object {
 	size := m.size()
 
 	if size > 0 {
@@ -32,7 +33,7 @@ func (m *stack) size() int {
 }
 
 type env struct {
-	values map[string]*GObject
+	values map[string]g.Object
 	parent *env
 }
 
@@ -48,7 +49,7 @@ func (m *env) resolve(name string) *env {
 	return nil
 }
 
-func (m *env) lookup(name string) *GObject {
+func (m *env) lookup(name string) g.Object {
 	env := m.resolve(name)
 	if env != nil {
 		return env.values[name]
@@ -62,11 +63,11 @@ func (m *env) defined(name string) bool {
 	return m.resolve(name) != nil
 }
 
-func (m *env) define(name string, value *GObject) {
+func (m *env) define(name string, value g.Object) {
 	m.values[name] = value
 }
 
-func (m *env) assign(name string, value *GObject) {
+func (m *env) assign(name string, value g.Object) {
 	env := m.resolve(name)
 	if env != nil {
 		env.define(name, value)
@@ -84,9 +85,9 @@ type VM struct {
 
 // NewVM creates a new VM
 func NewVM() *VM {
-	env := &env{values: map[string]*GObject{}}
+	env := &env{values: map[string]g.Object{}}
 
-	for name, builtin := range gbuiltins {
+	for name, builtin := range g.Builtins() {
 		env.define(name, builtin)
 	}
 
@@ -97,7 +98,7 @@ func NewVM() *VM {
 }
 
 // Run runs the provided code
-func (m *VM) Run(code compiler.Code) *GObject {
+func (m *VM) Run(code compiler.Code) g.Object {
 	var pc int
 
 	for pc < len(code) {
@@ -106,7 +107,7 @@ func (m *VM) Run(code compiler.Code) *GObject {
 
 		switch ins.Opcode {
 		case op.LoadConst:
-			m.stack.push(NewGObjectInferred(ins.Arg))
+			m.stack.push(g.NewObject(ins.Arg))
 
 		case op.StoreName:
 			name := ins.Arg.(string)
@@ -122,7 +123,7 @@ func (m *VM) Run(code compiler.Code) *GObject {
 
 		case op.CallFunc:
 			argc := ins.Arg.(int)
-			args := make([]*GObject, argc)
+			args := make(g.Args, argc)
 
 			for i := 0; i < argc; i++ {
 				args[argc-i-1] = m.stack.pop()
@@ -130,24 +131,28 @@ func (m *VM) Run(code compiler.Code) *GObject {
 
 			fun := m.stack.pop()
 
-			switch fun.Type {
-			case gtypes.Func:
-				ctx := &GFuncCtx{VM: m, Args: args}
-				m.stack.push(fun.Interface().(GFunc)(ctx))
+			switch fun.Type() {
+			case g.TypeBuiltinFunc:
+				m.stack.push(fun.Call(g.Protocols.Invoke, args))
 
-			case gtypes.UserFunc:
-				guserfunc := fun.Value.(GUserFunc)
+			case g.TypeFunc:
+				desc := fun.Value().(g.FuncDescription)
 				vmenv := m.env
-				env := &env{values: map[string]*GObject{}, parent: guserfunc.env}
-				for i, param := range guserfunc.params {
-					env.values[param] = args[i]
+				env := &env{
+					values: map[string]g.Object{},
+					parent: desc.Env.(*env),
 				}
+
+				for i, param := range desc.Params {
+					env.define(param, args[i])
+				}
+
 				m.env = env
-				m.stack.push(m.Run(guserfunc.body))
+				m.stack.push(m.Run(desc.Body))
 				m.env = vmenv
 
 			default:
-				assert.Unreached("unexpected type called as function: gtypes.%s", fun.Type.Name)
+				assert.Unreached("unexpected type called as function: gtypes.%s", fun.Type().Name)
 			}
 
 		case op.RelJump:
@@ -155,30 +160,28 @@ func (m *VM) Run(code compiler.Code) *GObject {
 
 		case op.RelJumpIfTrue:
 			condition := m.stack.pop()
-			if condition.IsTruthy() {
+			if g.IsTruthy(condition) {
 				pc += ins.Arg.(int)
 			}
 
 		case op.RelJumpIfFalse:
 			condition := m.stack.pop()
-			if !condition.IsTruthy() {
+			if !g.IsTruthy(condition) {
 				pc += ins.Arg.(int)
 			}
 
 		case op.PushValue:
-			m.stack.push(&GObject{Type: gtypes.Internal, Value: ins.Arg})
+			m.stack.push(g.NewInternalObject(ins.Arg))
 
 		case op.MakeFunc:
-			body := m.stack.pop().Interface().(compiler.Code)
-			params := m.stack.pop().Interface().([]string)
-			m.stack.push(&GObject{
-				Type: gtypes.UserFunc,
-				Value: GUserFunc{
-					params: params,
-					body:   body,
-					env:    m.env,
-				},
-			})
+			body := m.stack.pop().Value().(compiler.Code)
+			params := m.stack.pop().Value().([]string)
+
+			m.stack.push(g.NewObject(g.FuncDescription{
+				Params: params,
+				Body:   body,
+				Env:    m.env,
+			}))
 
 		default:
 			assert.Unreached("unknown instruction: %v", ins)
