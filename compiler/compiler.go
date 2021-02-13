@@ -1,12 +1,11 @@
 package compiler
 
 import (
-	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler/op"
+	"github.com/johnfrankmorgan/gazebo/debug"
 )
 
 // Code is a slice containing executable bytecode
@@ -15,12 +14,11 @@ type Code []op.Instruction
 // Dump prints a Code's formatted bytecode to stderr
 func (m Code) Dump() {
 	for idx, ins := range m {
-		fmt.Fprintf(
-			os.Stderr,
-			"%6d %18s (%d) %v\n",
+		debug.Printf(
+			"%6d %18s (%02x) %v\n",
 			idx,
 			ins.Opcode.Name(),
-			ins.Opcode,
+			int(ins.Opcode),
 			ins.Arg,
 		)
 	}
@@ -34,10 +32,19 @@ func Compile(source string) Code {
 	)
 
 	expr := parse(source)
+
+	if debug.Enabled() {
+		expr.dump(0)
+	}
+
 	assert.False(expr.atom())
 
 	for _, expr := range expr.children {
 		code = append(code, compiler.compile(expr)...)
+	}
+
+	if debug.Enabled() {
+		code.Dump()
 	}
 
 	return code

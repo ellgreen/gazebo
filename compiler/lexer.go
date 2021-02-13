@@ -2,12 +2,11 @@ package compiler
 
 import (
 	"bytes"
-	"fmt"
-	"os"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/johnfrankmorgan/gazebo/assert"
+	"github.com/johnfrankmorgan/gazebo/debug"
 )
 
 func tokenize(source string) tokens {
@@ -26,11 +25,10 @@ type tokens []token
 
 func (m tokens) dump() {
 	for idx, tk := range m {
-		fmt.Fprintf(
-			os.Stderr,
-			"%6d: %3d :: %16s :: %q\n",
+		debug.Printf(
+			"%6d: %02x :: %16s :: %q\n",
 			idx,
-			tk.typ,
+			int(tk.typ),
 			tk.typ.name(),
 			tk.value,
 		)
