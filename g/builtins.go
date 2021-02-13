@@ -49,7 +49,7 @@ func Builtins() map[string]Object {
 		"%": NewObject(func(args Args) Object {
 			args.Expects(2)
 
-			result := math.Mod(ToNumber(args[0]), ToNumber(args[1]))
+			result := math.Mod(ToFloat(args[0]), ToFloat(args[1]))
 
 			return NewObject(result)
 		}),

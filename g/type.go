@@ -173,34 +173,34 @@ func init() {
 				result := self.Value().(float64)
 
 				for _, arg := range args {
-					result += ToNumber(arg)
+					result += ToFloat(arg)
 				}
 
 				return NewObject(result)
 			}),
 
 			Protocols.Sub: Method(func(self Object, args Args) Object {
-				result := self.Value().(float64) - ToNumber(args.Self())
+				result := self.Value().(float64) - ToFloat(args.Self())
 				return NewObject(result)
 			}),
 
 			Protocols.Mul: Method(func(self Object, args Args) Object {
-				result := self.Value().(float64) * ToNumber(args.Self())
+				result := self.Value().(float64) * ToFloat(args.Self())
 				return NewObject(result)
 			}),
 
 			Protocols.Div: Method(func(self Object, args Args) Object {
-				result := self.Value().(float64) / ToNumber(args.Self())
+				result := self.Value().(float64) / ToFloat(args.Self())
 				return NewObject(result)
 			}),
 
 			Protocols.LessThan: Method(func(self Object, args Args) Object {
-				result := self.Value().(float64) < ToNumber(args.Self())
+				result := self.Value().(float64) < ToFloat(args.Self())
 				return NewObject(result)
 			}),
 
 			Protocols.GreaterThan: Method(func(self Object, args Args) Object {
-				result := self.Value().(float64) > ToNumber(args.Self())
+				result := self.Value().(float64) > ToFloat(args.Self())
 				return NewObject(result)
 			}),
 		},
@@ -219,6 +219,15 @@ func init() {
 				assert.Nil(err)
 
 				return NewObject(value)
+			}),
+
+			Protocols.Len: Method(func(self Object, _ Args) Object {
+				return NewObject(len(self.Value().(string)))
+			}),
+
+			Protocols.Index: Method(func(self Object, args Args) Object {
+				index := ToInt(args.Self())
+				return NewObject(self.Value().(string)[index : index+1])
 			}),
 		},
 	}
