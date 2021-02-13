@@ -1,4 +1,4 @@
-package gazebo
+package vm
 
 import (
 	"github.com/johnfrankmorgan/gazebo/assert"
@@ -7,92 +7,22 @@ import (
 	"github.com/johnfrankmorgan/gazebo/g"
 )
 
-type stack struct {
-	values []g.Object
-}
-
-func (m *stack) push(value g.Object) {
-	m.values = append(m.values, value)
-}
-
-func (m *stack) pop() g.Object {
-	size := m.size()
-
-	if size > 0 {
-		value := m.values[size-1]
-		m.values = m.values[:size-1]
-		return value
-	}
-
-	assert.Unreached("stack empty")
-	return nil
-}
-
-func (m *stack) size() int {
-	return len(m.values)
-}
-
-type env struct {
-	values map[string]g.Object
-	parent *env
-}
-
-func (m *env) resolve(name string) *env {
-	if _, ok := m.values[name]; ok {
-		return m
-	}
-
-	if m.parent != nil {
-		return m.parent.resolve(name)
-	}
-
-	return nil
-}
-
-func (m *env) lookup(name string) g.Object {
-	env := m.resolve(name)
-	if env != nil {
-		return env.values[name]
-	}
-
-	assert.Unreached("undefined name %q", name)
-	return nil
-}
-
-func (m *env) defined(name string) bool {
-	return m.resolve(name) != nil
-}
-
-func (m *env) define(name string, value g.Object) {
-	m.values[name] = value
-}
-
-func (m *env) assign(name string, value g.Object) {
-	env := m.resolve(name)
-	if env != nil {
-		env.define(name, value)
-		return
-	}
-
-	assert.Unreached("undefined name %q", name)
-}
-
 // VM is the structure responsible for running code and keeping track of state
 type VM struct {
 	stack *stack
 	env   *env
 }
 
-// NewVM creates a new VM
-func NewVM() *VM {
-	env := &env{values: map[string]g.Object{}}
+// New creates a new VM
+func New() *VM {
+	env := new(env)
 
 	for name, builtin := range g.Builtins() {
 		env.define(name, builtin)
 	}
 
 	return &VM{
-		stack: &stack{},
+		stack: new(stack),
 		env:   env,
 	}
 }
@@ -139,7 +69,6 @@ func (m *VM) Run(code compiler.Code) g.Object {
 				desc := fun.Value().(g.FuncDescription)
 				vmenv := m.env
 				env := &env{
-					values: map[string]g.Object{},
 					parent: desc.Env.(*env),
 				}
 

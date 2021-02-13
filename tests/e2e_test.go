@@ -5,8 +5,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/johnfrankmorgan/gazebo"
 	"github.com/johnfrankmorgan/gazebo/compiler"
+	"github.com/johnfrankmorgan/gazebo/vm"
 )
 
 const TestScripts = "../tests/gaz"
@@ -26,7 +26,7 @@ func TestGazScripts(t *testing.T) {
 
 			code := compiler.Compile(string(source))
 
-			gazebo.NewVM().Run(code)
+			vm.New().Run(code)
 		})
 	}
 }

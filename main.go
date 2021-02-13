@@ -2,13 +2,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 
-	"github.com/johnfrankmorgan/gazebo"
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler"
 	"github.com/johnfrankmorgan/gazebo/debug"
+	"github.com/johnfrankmorgan/gazebo/vm"
 )
 
 func main() {
@@ -28,8 +27,8 @@ func main() {
 	code := compiler.Compile(string(source))
 
 	if debug.Enabled() {
-		fmt.Print("\n\n")
+		debug.Printf("\n\n")
 	}
 
-	gazebo.NewVM().Run(code)
+	vm.New().Run(code)
 }
