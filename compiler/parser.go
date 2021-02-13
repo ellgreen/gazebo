@@ -1,11 +1,20 @@
 package compiler
 
 import (
+	"strings"
+
 	"github.com/johnfrankmorgan/gazebo/assert"
+	"github.com/johnfrankmorgan/gazebo/debug"
 )
 
 func parse(source string) *sexpr {
-	parser := parser{tokens: tokenize(source)}
+	tokens := tokenize(source)
+
+	if debug.Enabled() {
+		tokens.dump()
+	}
+
+	parser := parser{tokens: tokens}
 
 	return parser.parse()
 }
@@ -13,6 +22,23 @@ func parse(source string) *sexpr {
 type sexpr struct {
 	children []*sexpr
 	token    token
+}
+
+func (m *sexpr) dump(depth int) {
+	indent := strings.Repeat(" ", depth*2)
+
+	if m.atom() {
+		debug.Printf("%s%s(%v)\n", indent, m.token.typ.name(), m.token.value)
+		return
+	}
+
+	debug.Printf("%s(\n", indent)
+
+	for _, expr := range m.children {
+		expr.dump(depth + 1)
+	}
+
+	debug.Printf("%s)\n", indent)
 }
 
 func (m *sexpr) atom() bool {

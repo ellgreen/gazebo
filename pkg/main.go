@@ -1,25 +1,35 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/johnfrankmorgan/gazebo"
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler"
+	"github.com/johnfrankmorgan/gazebo/debug"
 )
 
 func main() {
-	assert.Len(os.Args, 2)
+	debugging := flag.Bool("d", false, "enable debugging")
 
-	source, err := ioutil.ReadFile(os.Args[1])
+	flag.Parse()
+
+	if *debugging {
+		debug.Enable()
+	}
+
+	assert.Len(flag.Args(), 1)
+
+	source, err := ioutil.ReadFile(flag.Args()[0])
 	assert.Nil(err)
 
 	code := compiler.Compile(string(source))
-	code.Dump()
 
-	fmt.Print("\n\n")
+	if debug.Enabled() {
+		fmt.Print("\n\n")
+	}
 
 	gazebo.NewVM().Run(code)
 }
