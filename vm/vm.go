@@ -5,12 +5,14 @@ import (
 	"github.com/johnfrankmorgan/gazebo/compiler"
 	"github.com/johnfrankmorgan/gazebo/compiler/op"
 	"github.com/johnfrankmorgan/gazebo/g"
+	"github.com/johnfrankmorgan/gazebo/g/modules"
 )
 
 // VM is the structure responsible for running code and keeping track of state
 type VM struct {
-	stack *stack
-	env   *env
+	stack   *stack
+	env     *env
+	modules map[string]*modules.Module
 }
 
 // New creates a new VM
@@ -24,6 +26,10 @@ func New() *VM {
 	return &VM{
 		stack: new(stack),
 		env:   env,
+		modules: map[string]*modules.Module{
+			"str":  modules.Str,
+			"http": modules.HTTP,
+		},
 	}
 }
 
@@ -63,7 +69,7 @@ func (m *VM) Run(code compiler.Code) g.Object {
 
 			switch fun.Type() {
 			case g.TypeBuiltinFunc:
-				m.stack.push(fun.Call(g.Protocols.Invoke, args))
+				m.stack.push(g.Invoke(fun, args))
 
 			case g.TypeFunc:
 				desc := fun.Value().(g.FuncDescription)
@@ -111,6 +117,14 @@ func (m *VM) Run(code compiler.Code) g.Object {
 				Body:   body,
 				Env:    m.env,
 			}))
+
+		case op.LoadModule:
+			name := ins.Arg.(string)
+			module, ok := m.modules[name]
+
+			assert.True(ok, "undefined module: %s", name)
+
+			module.Load(&m.env.values)
 
 		default:
 			assert.Unreached("unknown instruction: %v", ins)

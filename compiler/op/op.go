@@ -22,6 +22,7 @@ const (
 	RelJumpIfFalse
 	PushValue
 	MakeFunc
+	LoadModule
 )
 
 // Ins creates an Instruction for an Opcode
@@ -42,6 +43,7 @@ func (op Opcode) Name() string {
 		RelJumpIfFalse: "op.RelJumpIfFalse",
 		PushValue:      "op.PushValue",
 		MakeFunc:       "op.MakeFunc",
+		LoadModule:     "op.LoadModule",
 	}
 
 	if name, ok := names[op]; ok {

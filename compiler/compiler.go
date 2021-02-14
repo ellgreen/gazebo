@@ -15,7 +15,7 @@ type Code []op.Instruction
 func (m Code) Dump() {
 	for idx, ins := range m {
 		debug.Printf(
-			"%6d %18s (%02x) %v\n",
+			"%6d %18s (0x%02x) %v\n",
 			idx,
 			ins.Opcode.Name(),
 			int(ins.Opcode),
@@ -101,7 +101,11 @@ func (m *compiler) compile(expr *sexpr) Code {
 		if len(expr.children) == 3 {
 			params := []string{}
 			for _, param := range expr.children[1].children {
-				assert.True(param.atom() && param.token.is(tkident), "function parameters must be identities")
+				assert.True(
+					param.atom() && param.token.is(tkident),
+					"function parameters must be identifiers",
+				)
+
 				params = append(params, param.token.value)
 			}
 			code := Code{
@@ -125,6 +129,21 @@ func (m *compiler) compile(expr *sexpr) Code {
 		}
 
 		assert.Unreached("fun keyword should contain 3 or 4 children, got %d", len(expr.children))
+
+	case "load":
+		assert.True(len(expr.children) >= 2)
+		code := Code{}
+
+		for _, expr := range expr.children[1:] {
+			assert.True(
+				expr.atom() && expr.token.is(tkident),
+				"load parameters must be identifiers",
+			)
+
+			code = append(code, op.LoadModule.Ins(expr.token.value))
+		}
+
+		return code
 	}
 
 	if !expr.children[0].atom() {

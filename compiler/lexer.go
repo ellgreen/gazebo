@@ -170,8 +170,7 @@ func (m *lexer) line(typ tokentype) token {
 
 func (m *lexer) lstring() token {
 	for !m.finished() {
-		ch := m.peek()
-		if ch == '"' {
+		if m.peek() == '"' {
 			m.next()
 			return m.token(tkstring)
 		}
@@ -187,6 +186,7 @@ func (m *lexer) lnumber() token {
 
 	for !m.finished() {
 		ch := m.peek()
+
 		if ch == '.' && !isfloat {
 			m.next()
 			isfloat = true
@@ -205,8 +205,7 @@ func (m *lexer) lnumber() token {
 
 func (m *lexer) lident() token {
 	for !m.finished() {
-		ch := m.peek()
-		if !m.isidentchar(ch) {
+		if !m.isidentchar(m.peek()) {
 			return m.token(tkident)
 		}
 
@@ -218,8 +217,7 @@ func (m *lexer) lident() token {
 
 func (m *lexer) lwhitespace() token {
 	for !m.finished() {
-		ch := m.peek()
-		if !m.iswhitespace(ch) {
+		if !m.iswhitespace(m.peek()) {
 			return m.token(tkwhitespace)
 		}
 
