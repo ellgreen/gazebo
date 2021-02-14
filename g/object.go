@@ -28,6 +28,9 @@ func NewObject(value interface{}) Object {
 	case string:
 		return New(TypeString, value)
 
+	case []Object:
+		return New(TypeList, value)
+
 	case FuncDescription:
 		return New(TypeFunc, value)
 
