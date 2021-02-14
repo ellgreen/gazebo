@@ -16,12 +16,20 @@ type VM struct {
 }
 
 // New creates a new VM
-func New() *VM {
+func New(argv ...string) *VM {
 	env := new(env)
 
 	for name, builtin := range g.Builtins() {
 		env.define(name, builtin)
 	}
+
+	gargv := make([]g.Object, len(argv))
+
+	for i, arg := range argv {
+		gargv[i] = g.NewObject(arg)
+	}
+
+	env.define("argv", g.NewObject(gargv))
 
 	return &VM{
 		stack: new(stack),
