@@ -41,15 +41,14 @@ func (m *Type) Implements(name string) bool {
 
 // Builtin types
 var (
-	TypeBase        *Type
-	TypeNil         *Type
-	TypeBool        *Type
-	TypeNumber      *Type
-	TypeString      *Type
-	TypeList        *Type
-	TypeBuiltinFunc *Type
-	TypeFunc        *Type
-	TypeInternal    *Type
+	TypeBase         *Type
+	TypeNil          *Type
+	TypeBool         *Type
+	TypeNumber       *Type
+	TypeString       *Type
+	TypeList         *Type
+	TypeInternalFunc *Type
+	TypeFunc         *Type
 )
 
 func init() {
@@ -252,8 +251,8 @@ func init() {
 		},
 	}
 
-	TypeBuiltinFunc = &Type{
-		Name:   "BuiltinFunc",
+	TypeInternalFunc = &Type{
+		Name:   "InternalFunc",
 		Parent: TypeBase,
 		Methods: Methods{
 			Protocols.Invoke: Method(func(self Object, args Args) Object {
@@ -264,12 +263,6 @@ func init() {
 
 	TypeFunc = &Type{
 		Name:    "Func",
-		Parent:  TypeBase,
-		Methods: Methods{},
-	}
-
-	TypeInternal = &Type{
-		Name:    "Internal",
 		Parent:  TypeBase,
 		Methods: Methods{},
 	}
