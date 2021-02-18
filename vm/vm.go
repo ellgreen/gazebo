@@ -130,6 +130,16 @@ func (m *VM) Run(code compiler.Code) g.Object {
 
 			module.Load(&m.env.values)
 
+		case op.MakeList:
+			length := ins.Arg.(int)
+			values := make([]g.Object, length)
+
+			for i := 0; i < length; i++ {
+				values[length-i-1] = m.stack.pop()
+			}
+
+			m.stack.push(g.NewObjectList(values))
+
 		default:
 			assert.Unreached("unknown instruction: %v", ins)
 		}

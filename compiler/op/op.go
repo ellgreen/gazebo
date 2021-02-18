@@ -23,6 +23,7 @@ const (
 	PushValue
 	MakeFunc
 	LoadModule
+	MakeList
 )
 
 // Ins creates an Instruction for an Opcode
@@ -44,6 +45,7 @@ func (op Opcode) Name() string {
 		PushValue:      "op.PushValue",
 		MakeFunc:       "op.MakeFunc",
 		LoadModule:     "op.LoadModule",
+		MakeList:       "op.MakeList",
 	}
 
 	if name, ok := names[op]; ok {
