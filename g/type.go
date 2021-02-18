@@ -49,6 +49,7 @@ var (
 	TypeList         *Type
 	TypeInternalFunc *Type
 	TypeFunc         *Type
+	TypeInternal     *Type
 )
 
 func init() {
@@ -263,6 +264,12 @@ func init() {
 
 	TypeFunc = &Type{
 		Name:    "Func",
+		Parent:  TypeBase,
+		Methods: Methods{},
+	}
+
+	TypeInternal = &Type{
+		Name:    "Internal",
 		Parent:  TypeBase,
 		Methods: Methods{},
 	}

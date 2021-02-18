@@ -43,6 +43,18 @@ func EnsureInternalFunc(value Object) *ObjectInternalFunc {
 	return value.(*ObjectInternalFunc)
 }
 
+// EnsureFunc asserts that an Object is an ObjectFunc
+func EnsureFunc(value Object) *ObjectFunc {
+	assert.True(value.Type() == TypeFunc, "expected type Func got %s", value.Type().Name)
+	return value.(*ObjectFunc)
+}
+
+// EnsureInternal asserts that an Object is an ObjectInternal
+func EnsureInternal(value Object) *ObjectInternal {
+	assert.True(value.Type() == TypeFunc, "expected type Internal got %s", value.Type().Name)
+	return value.(*ObjectInternal)
+}
+
 // IsTruthy determines if the provided Object is truthy
 func IsTruthy(object Object) bool {
 	return EnsureBool(object.Call(Protocols.ToBool, nil)).Bool()
