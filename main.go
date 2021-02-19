@@ -19,7 +19,7 @@ func main() {
 		debug.Enable()
 	}
 
-	assert.True(len(flag.Args()) > 1)
+	assert.Len(flag.Args(), 1)
 
 	source, err := ioutil.ReadFile(flag.Args()[0])
 	assert.Nil(err)

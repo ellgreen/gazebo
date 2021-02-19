@@ -33,7 +33,7 @@ var Protocols = struct {
 	Div:         "/",
 	GreaterThan: ">",
 	LessThan:    "<",
-	Index:       "at",
+	Index:       "index",
 	Len:         "len",
 	HasAttr:     "has",
 	GetAttr:     "get",

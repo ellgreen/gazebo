@@ -144,6 +144,19 @@ func (m *compiler) compile(expr *sexpr) Code {
 		}
 
 		return code
+
+	case "list":
+		assert.Len(expr.children, 2)
+
+		code := Code{}
+		length := 0
+
+		for _, expr := range expr.children[1].children {
+			code = append(code, m.compile(expr)...)
+			length++
+		}
+
+		return append(code, op.MakeList.Ins(length))
 	}
 
 	if !expr.children[0].atom() {

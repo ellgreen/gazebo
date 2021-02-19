@@ -23,13 +23,13 @@ func New(argv ...string) *VM {
 		env.define(name, builtin)
 	}
 
-	gargv := make([]g.Object, len(argv))
+	gargv := g.NewObjectList(nil)
 
-	for i, arg := range argv {
-		gargv[i] = g.NewObject(arg)
+	for _, arg := range argv {
+		gargv.Append(g.NewObjectString(arg))
 	}
 
-	env.define("argv", g.NewObject(gargv))
+	env.define("argv", gargv)
 
 	return &VM{
 		stack: new(stack),
@@ -76,22 +76,23 @@ func (m *VM) Run(code compiler.Code) g.Object {
 			fun := m.stack.pop()
 
 			switch fun.Type() {
-			case g.TypeBuiltinFunc:
+			case g.TypeInternalFunc:
 				m.stack.push(g.Invoke(fun, args))
 
 			case g.TypeFunc:
-				desc := fun.Value().(g.FuncDescription)
+				fun := g.EnsureFunc(fun)
+
 				vmenv := m.env
 				env := &env{
-					parent: desc.Env.(*env),
+					parent: fun.Env().(*env),
 				}
 
-				for i, param := range desc.Params {
+				for i, param := range fun.Params() {
 					env.define(param, args[i])
 				}
 
 				m.env = env
-				m.stack.push(m.Run(desc.Body))
+				m.stack.push(m.Run(fun.Code()))
 				m.env = vmenv
 
 			default:
@@ -114,17 +115,12 @@ func (m *VM) Run(code compiler.Code) g.Object {
 			}
 
 		case op.PushValue:
-			m.stack.push(g.NewInternalObject(ins.Arg))
+			m.stack.push(g.NewObjectInternal(ins.Arg))
 
 		case op.MakeFunc:
 			body := m.stack.pop().Value().(compiler.Code)
 			params := m.stack.pop().Value().([]string)
-
-			m.stack.push(g.NewObject(g.FuncDescription{
-				Params: params,
-				Body:   body,
-				Env:    m.env,
-			}))
+			m.stack.push(g.NewObjectFunc(params, body, m.env))
 
 		case op.LoadModule:
 			name := ins.Arg.(string)
@@ -133,6 +129,16 @@ func (m *VM) Run(code compiler.Code) g.Object {
 			assert.True(ok, "undefined module: %s", name)
 
 			module.Load(&m.env.values)
+
+		case op.MakeList:
+			length := ins.Arg.(int)
+			values := make([]g.Object, length)
+
+			for i := 0; i < length; i++ {
+				values[length-i-1] = m.stack.pop()
+			}
+
+			m.stack.push(g.NewObjectList(values))
 
 		default:
 			assert.Unreached("unknown instruction: %v", ins)
