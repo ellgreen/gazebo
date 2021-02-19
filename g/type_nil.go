@@ -6,7 +6,7 @@ func initnil() {
 		Parent: TypeBase,
 		Methods: Methods{
 			Protocols.ToBool: Method(func(_ Object, _ Args) Object {
-				return NewObject(false)
+				return NewObjectBool(false)
 			}),
 		},
 	}

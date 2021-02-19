@@ -6,16 +6,17 @@ func initlist() {
 		Parent: TypeBase,
 		Methods: Methods{
 			Protocols.ToBool: Method(func(self Object, _ Args) Object {
-				return NewObject(len(self.Value().([]Object)) > 0)
+				return NewObjectBool(EnsureList(self).Len() > 0)
 			}),
 
 			Protocols.Len: Method(func(self Object, _ Args) Object {
-				return NewObject(len(self.Value().([]Object)))
+				return NewObjectNumber(float64(EnsureList(self).Len()))
 			}),
 
 			Protocols.Index: Method(func(self Object, args Args) Object {
 				index := ToInt(args.Self())
-				return NewObject(self.Value().([]Object)[index].Value())
+
+				return EnsureList(self).Index(index)
 			}),
 		},
 	}

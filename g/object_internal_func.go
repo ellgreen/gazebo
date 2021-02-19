@@ -7,10 +7,10 @@ type ObjectInternalFunc struct {
 }
 
 // NewObjectInternalFunc creates a new internal function object
-func NewObjectInternalFunc(value Func) *ObjectInternalFunc {
+func NewObjectInternalFunc(value func(Args) Object) *ObjectInternalFunc {
 	return &ObjectInternalFunc{
 		object: object{typ: TypeInternalFunc},
-		value:  value,
+		value:  Func(value),
 	}
 }
 

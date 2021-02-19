@@ -28,3 +28,8 @@ func (m *ObjectString) Call(method string, args Args) Object {
 func (m *ObjectString) String() string {
 	return m.value
 }
+
+// Len returns the object's length
+func (m *ObjectString) Len() int {
+	return len(m.value)
+}

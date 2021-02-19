@@ -21,7 +21,7 @@ func _protocolmethods() []string {
 // Builtins returns all of the builtin objects in gazebo
 func Builtins() map[string]Object {
 	methodcall := func(name string) Object {
-		return NewObject(func(args Args) Object {
+		return NewObjectInternalFunc(func(args Args) Object {
 			self, args := args.SelfWithArgs()
 			return self.Call(name, args)
 		})
@@ -36,43 +36,42 @@ func Builtins() map[string]Object {
 	}
 
 	return wrapmethods(map[string]Object{
-		"nil": NewObject(nil),
+		"nil": NewObjectNil(),
 
-		"false": NewObject(false),
+		"false": NewObjectBool(false),
 
-		"true": NewObject(true),
+		"true": NewObjectBool(true),
 
-		"!": NewObject(func(args Args) Object {
-			return NewObject(!IsTruthy(args.Self()))
+		"!": NewObjectInternalFunc(func(args Args) Object {
+			return NewObjectBool(!IsTruthy(args.Self()))
 		}),
 
-		"%": NewObject(func(args Args) Object {
+		"%": NewObjectInternalFunc(func(args Args) Object {
 			args.Expects(2)
 
 			result := math.Mod(ToFloat(args[0]), ToFloat(args[1]))
-
-			return NewObject(result)
+			return NewObjectNumber(result)
 		}),
 
-		"call": NewObject(func(args Args) Object {
+		"call": NewObjectInternalFunc(func(args Args) Object {
 			name, args := args.SelfWithArgs()
 			self, args := args.SelfWithArgs()
-			return self.Call(name.Value().(string), args)
+			return self.Call(EnsureString(name).String(), args)
 		}),
 
-		"nil?": NewObject(func(args Args) Object {
-			return NewObject(args.Self().Type() == TypeNil)
+		"nil?": NewObjectInternalFunc(func(args Args) Object {
+			return NewObjectBool(args.Self().Type() == TypeNil)
 		}),
 
-		"println": NewObject(func(args Args) Object {
+		"println": NewObjectInternalFunc(func(args Args) Object {
 			fmt.Println(args.Values()...)
-			return NewObject(nil)
+			return NewObjectNil()
 		}),
 
-		"printf": NewObject(func(args Args) Object {
+		"printf": NewObjectInternalFunc(func(args Args) Object {
 			format, args := args.SelfWithArgs()
-			fmt.Printf(format.Value().(string), args.Values()...)
-			return NewObject(nil)
+			fmt.Printf(EnsureString(format).String(), args.Values()...)
+			return NewObjectNil()
 		}),
 	})
 }

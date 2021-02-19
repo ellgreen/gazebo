@@ -27,10 +27,10 @@ func (m *Attributes) Get(name string) Object {
 		return m.values[name]
 	}
 
-	return NewObject(nil)
+	return NewObjectNil()
 }
 
-// Set sets and attribute's value
+// Set sets an attribute's value
 func (m *Attributes) Set(name string, value Object) {
 	m.init()
 

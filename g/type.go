@@ -54,7 +54,7 @@ func init() {
 		Parent: TypeBase,
 		Methods: Methods{
 			Protocols.Invoke: Method(func(self Object, args Args) Object {
-				return self.Value().(Func)(args)
+				return EnsureInternalFunc(self).Func()(args)
 			}),
 		},
 	}

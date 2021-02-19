@@ -6,15 +6,15 @@ func initbool() {
 		Parent: TypeBase,
 		Methods: Methods{
 			Protocols.ToBool: Method(func(self Object, _ Args) Object {
-				return NewObject(self.Value())
+				return NewObjectBool(EnsureBool(self).Bool())
 			}),
 
 			Protocols.ToNumber: Method(func(self Object, _ Args) Object {
-				if self.Value().(bool) {
-					return NewObject(1)
+				if EnsureBool(self).Bool() {
+					return NewObjectNumber(1)
 				}
 
-				return NewObject(0)
+				return NewObjectNumber(0)
 			}),
 		},
 	}
