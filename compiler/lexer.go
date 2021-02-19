@@ -128,6 +128,10 @@ func (m *lexer) isalpha(ch rune) bool {
 }
 
 func (m *lexer) isidentchar(ch rune) bool {
+	if ch >= 0x1f600 { // > 😀
+		return true
+	}
+
 	if m.isalpha(ch) || m.isdigit(ch) {
 		return true
 	}
