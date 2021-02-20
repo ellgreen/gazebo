@@ -4,7 +4,7 @@ import "github.com/johnfrankmorgan/gazebo/compiler"
 
 // ObjectFunc is the underlying type of user-defined functions in gazebo
 type ObjectFunc struct {
-	object
+	PartialObject
 	params []string
 	code   compiler.Code
 	env    interface{}
@@ -13,10 +13,10 @@ type ObjectFunc struct {
 // NewObjectFunc creates a new user-defined function
 func NewObjectFunc(params []string, code compiler.Code, env interface{}) Object {
 	return &ObjectFunc{
-		object: object{typ: TypeFunc},
-		params: params,
-		code:   code,
-		env:    env,
+		PartialObject: PartialObject{typ: TypeFunc},
+		params:        params,
+		code:          code,
+		env:           env,
 	}
 }
 

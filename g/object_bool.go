@@ -2,15 +2,15 @@ package g
 
 // ObjectBool is the underlying type of booleans in gazebo
 type ObjectBool struct {
-	object
+	PartialObject
 	value bool
 }
 
 // NewObjectBool creates a new boolean object
 func NewObjectBool(value bool) *ObjectBool {
 	return &ObjectBool{
-		object: object{typ: TypeBool},
-		value:  value,
+		PartialObject: PartialObject{typ: TypeBool},
+		value:         value,
 	}
 }
 

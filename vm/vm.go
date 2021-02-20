@@ -33,12 +33,9 @@ func New(argv ...string) *VM {
 	env.define("argv", gargv)
 
 	return &VM{
-		stack: new(stack),
-		env:   env,
-		modules: map[string]*modules.Module{
-			"str":  modules.Str,
-			"http": modules.HTTP,
-		},
+		stack:   new(stack),
+		env:     env,
+		modules: modules.All(),
 	}
 }
 
@@ -117,7 +114,10 @@ func (m *VM) run(code compiler.Code) g.Object {
 				m.env = vmenv
 
 			default:
-				assert.Unreached("unexpected type called as function: gtypes.%s", fun.Type().Name)
+				errors.ErrRuntime.Panic(
+					"unexpected type called as function: gtypes.%s",
+					fun.Type().Name,
+				)
 			}
 
 		case op.RelJump:
@@ -147,7 +147,7 @@ func (m *VM) run(code compiler.Code) g.Object {
 			name := ins.Arg.(string)
 			module, ok := m.modules[name]
 
-			assert.True(ok, "undefined module: %s", name)
+			errors.ErrRuntime.Expect(ok, "undefined module: %s", name)
 
 			module.Load(&m.env.values)
 
