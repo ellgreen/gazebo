@@ -60,7 +60,7 @@ func Compile(source string) (code Code, err error) {
 		code.Dump()
 	}
 
-	return code, nil
+	return
 }
 
 type compiler struct{}

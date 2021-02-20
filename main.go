@@ -40,7 +40,8 @@ func main() {
 		debug.Printf("\n\n")
 	}
 
-	vm.New(flag.Args()[1:]...).Run(code)
+	_, err = vm.New(flag.Args()[1:]...).Run(code)
+	assert.Nil(err)
 }
 
 func repl() {
@@ -89,8 +90,12 @@ func repl() {
 			continue
 		}
 
-		result := vm.Run(code)
-		if result.Type() != g.TypeNil {
+		result, err := vm.Run(code)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		}
+
+		if result != nil && result.Type() != g.TypeNil {
 			fmt.Printf("%v\n", result.Call(g.Protocols.Inspect, nil).Value())
 		}
 

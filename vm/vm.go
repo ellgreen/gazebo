@@ -4,6 +4,7 @@ import (
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler"
 	"github.com/johnfrankmorgan/gazebo/compiler/op"
+	"github.com/johnfrankmorgan/gazebo/errors"
 	"github.com/johnfrankmorgan/gazebo/g"
 	"github.com/johnfrankmorgan/gazebo/g/modules"
 )
@@ -42,7 +43,27 @@ func New(argv ...string) *VM {
 }
 
 // Run runs the provided code
-func (m *VM) Run(code compiler.Code) g.Object {
+func (m *VM) Run(code compiler.Code) (value g.Object, err error) {
+	defer func() {
+		recovered := recover()
+
+		if recovered == nil {
+			return
+		}
+
+		if gerr, ok := recovered.(*errors.Error); ok {
+			err = gerr
+			return
+		}
+
+		panic(recovered)
+	}()
+
+	value = m.run(code)
+	return
+}
+
+func (m *VM) run(code compiler.Code) g.Object {
 	var pc int
 
 	for pc < len(code) {
@@ -92,7 +113,7 @@ func (m *VM) Run(code compiler.Code) g.Object {
 				}
 
 				m.env = env
-				m.stack.push(m.Run(fun.Code()))
+				m.stack.push(m.run(fun.Code()))
 				m.env = vmenv
 
 			default:

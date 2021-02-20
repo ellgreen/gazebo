@@ -17,7 +17,7 @@ func (e Error) Error() string {
 }
 
 func fail(args ...interface{}) {
-	message := "Assertion failed"
+	message := "assertion failed"
 
 	if len(args) > 0 {
 		message += ": " + pretty.Sprintf(args[0].(string), args[1:]...)
@@ -43,6 +43,10 @@ func False(condition bool, args ...interface{}) {
 // Nil asserts that a value is nil
 func Nil(value interface{}, args ...interface{}) {
 	if value != nil {
+		if len(args) == 0 {
+			args = []interface{}{"expected nil, got %v", value}
+		}
+
 		fail(args...)
 	}
 }
