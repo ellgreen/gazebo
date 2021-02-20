@@ -62,3 +62,8 @@ func (m *Error) ExpectLen(value interface{}, length int, args ...interface{}) {
 func (m *Error) ExpectAtLeast(value interface{}, length int, args ...interface{}) {
 	m.Expect(reflect.ValueOf(value).Len() >= length, args...)
 }
+
+// ExpectNil panics if its argument is not nil
+func (m *Error) ExpectNil(value interface{}, args ...interface{}) {
+	m.Expect(value == nil, args...)
+}
