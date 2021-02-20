@@ -9,7 +9,7 @@ import (
 func TestTrue(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.PanicsWithError("Assertion failed: test True", func() {
+	assert.PanicsWithError("assertion failed: test True", func() {
 		True(false, "test %s", "True")
 	})
 }
@@ -17,7 +17,7 @@ func TestTrue(t *testing.T) {
 func TestFalse(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.PanicsWithError("Assertion failed: test False", func() {
+	assert.PanicsWithError("assertion failed: test False", func() {
 		False(true, "test False")
 	})
 }

@@ -1,10 +1,12 @@
 package g
 
-import "github.com/johnfrankmorgan/gazebo/assert"
+import (
+	"github.com/johnfrankmorgan/gazebo/errors"
+)
 
 // EnsureNil asserts that an Object is an ObjectNil
 func EnsureNil(value Object) *ObjectNil {
-	assert.True(
+	errors.ErrRuntime.Expect(
 		value.Type() == TypeNil,
 		"expected type Nil got %s",
 		value.Type().Name,
@@ -15,7 +17,7 @@ func EnsureNil(value Object) *ObjectNil {
 
 // EnsureBool asserts that an Object is an ObjectBool
 func EnsureBool(value Object) *ObjectBool {
-	assert.True(
+	errors.ErrRuntime.Expect(
 		value.Type() == TypeBool,
 		"expected type Bool got %s",
 		value.Type().Name,
@@ -26,7 +28,7 @@ func EnsureBool(value Object) *ObjectBool {
 
 // EnsureNumber asserts that an Object is an ObjectNumber
 func EnsureNumber(value Object) *ObjectNumber {
-	assert.True(
+	errors.ErrRuntime.Expect(
 		value.Type() == TypeNumber,
 		"expected type Number got %s",
 		value.Type().Name,
@@ -37,7 +39,7 @@ func EnsureNumber(value Object) *ObjectNumber {
 
 // EnsureString asserts that an Object is an ObjectString
 func EnsureString(value Object) *ObjectString {
-	assert.True(
+	errors.ErrRuntime.Expect(
 		value.Type() == TypeString,
 		"expected type String got %s",
 		value.Type().Name,
@@ -48,7 +50,7 @@ func EnsureString(value Object) *ObjectString {
 
 // EnsureList asserts that an Object is an ObjectList
 func EnsureList(value Object) *ObjectList {
-	assert.True(
+	errors.ErrRuntime.Expect(
 		value.Type() == TypeList,
 		"expected type List got %s",
 		value.Type().Name,
@@ -59,7 +61,7 @@ func EnsureList(value Object) *ObjectList {
 
 // EnsureInternalFunc asserts that an Object is an ObjectInternalFunc
 func EnsureInternalFunc(value Object) *ObjectInternalFunc {
-	assert.True(
+	errors.ErrRuntime.Expect(
 		value.Type() == TypeInternalFunc,
 		"expected type InternalFunc got %s",
 		value.Type().Name,
@@ -70,7 +72,7 @@ func EnsureInternalFunc(value Object) *ObjectInternalFunc {
 
 // EnsureFunc asserts that an Object is an ObjectFunc
 func EnsureFunc(value Object) *ObjectFunc {
-	assert.True(
+	errors.ErrRuntime.Expect(
 		value.Type() == TypeFunc,
 		"expected type Func got %s",
 		value.Type().Name,
@@ -81,7 +83,7 @@ func EnsureFunc(value Object) *ObjectFunc {
 
 // EnsureInternal asserts that an Object is an ObjectInternal
 func EnsureInternal(value Object) *ObjectInternal {
-	assert.True(
+	errors.ErrRuntime.Expect(
 		value.Type() == TypeInternal,
 		"expected type Internal got %s",
 		value.Type().Name,

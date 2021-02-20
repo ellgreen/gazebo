@@ -3,8 +3,8 @@ package compiler
 import (
 	"strings"
 
-	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/debug"
+	"github.com/johnfrankmorgan/gazebo/errors"
 )
 
 func parse(source string) *sexpr {
@@ -56,7 +56,7 @@ type parser struct {
 }
 
 func (m *parser) unexpectedeof() *sexpr {
-	assert.Unreached("unexpected eof at token offset %d", m.position)
+	errors.ErrEOF.Panic("unexpected eof at token offset %d", m.position)
 	return nil
 }
 
@@ -75,7 +75,12 @@ func (m *parser) next() token {
 }
 
 func (m *parser) subexpr(start int, opener, closer tokentype) []token {
-	assert.True(m.tokens[start].is(opener))
+	errors.ErrParse.Expect(
+		m.tokens[start].is(opener),
+		"parse error: expected token type %s, got %s",
+		opener.name(),
+		m.tokens[start].typ.name(),
+	)
 
 	depth := 0
 
@@ -90,7 +95,7 @@ func (m *parser) subexpr(start int, opener, closer tokentype) []token {
 		}
 	}
 
-	assert.Unreached("unterminated expression near token offset: %d", start)
+	errors.ErrEOF.Panic("expecting %s near token offset %d", closer.name(), start)
 	return nil
 }
 

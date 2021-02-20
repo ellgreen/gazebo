@@ -1,0 +1,3 @@
+; ERROR RUNTIME
+(let str "test")
+(println (num str))

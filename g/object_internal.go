@@ -23,6 +23,6 @@ func (m *ObjectInternal) Value() interface{} {
 
 // Call satisfies the Object interface
 func (m *ObjectInternal) Call(method string, args Args) Object {
-	assert.Unreached()
+	assert.Unreached("attempted to call internal object")
 	return nil
 }

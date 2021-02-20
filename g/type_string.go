@@ -3,7 +3,7 @@ package g
 import (
 	"strconv"
 
-	"github.com/johnfrankmorgan/gazebo/assert"
+	"github.com/johnfrankmorgan/gazebo/errors"
 )
 
 func initstring() {
@@ -17,7 +17,7 @@ func initstring() {
 
 			Protocols.ToNumber: Method(func(self Object, _ Args) Object {
 				value, err := strconv.ParseFloat(EnsureString(self).String(), 64)
-				assert.Nil(err)
+				errors.ErrRuntime.ExpectNil(err, err.Error())
 
 				return NewObjectNumber(value)
 			}),

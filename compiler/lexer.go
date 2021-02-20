@@ -5,8 +5,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/debug"
+	"github.com/johnfrankmorgan/gazebo/errors"
 )
 
 func tokenize(source string) tokens {
@@ -49,10 +49,6 @@ const (
 	tkident
 	tknumber
 )
-
-func (typ tokentype) valid() bool {
-	return int(typ) > 0 && int(typ) <= int(tknumber)
-}
 
 func (typ tokentype) name() string {
 	names := map[tokentype]string{
@@ -101,7 +97,7 @@ type lexer struct {
 }
 
 func (m *lexer) unexpectedeof() token {
-	assert.Unreached("unexpected eof at byte offset %d", m.position)
+	errors.ErrEOF.Panic("unexpected eof at byte offset %d", m.position)
 	return m.token(tkinvalid)
 }
 
@@ -274,6 +270,6 @@ func (m *lexer) lex() token {
 		return m.lwhitespace()
 	}
 
-	assert.Unreached("unexpected rune %#U", ch)
+	errors.ErrParse.Panic("unexpected rune %c at byte offset %d", ch, m.position)
 	return m.token(tkinvalid)
 }

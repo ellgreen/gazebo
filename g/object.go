@@ -2,6 +2,7 @@ package g
 
 import (
 	"github.com/johnfrankmorgan/gazebo/assert"
+	"github.com/johnfrankmorgan/gazebo/errors"
 )
 
 // Object is the type of all values in gazebo
@@ -58,7 +59,12 @@ func (m *object) Attributes() *Attributes {
 }
 
 func (m *object) call(self Object, method string, args Args) Object {
-	assert.True(m.typ.Implements(method), "type %q does not implement %q", m.typ.Name, method)
+	errors.ErrRuntime.Expect(
+		m.typ.Implements(method),
+		"type %s does not implement %s",
+		m.typ.Name,
+		method,
+	)
 
 	return m.typ.Resolve(method)(self, args)
 }
