@@ -142,8 +142,13 @@ func (m *VM) Run(code compiler.Code) g.Object {
 
 		case op.IndexGet:
 			index := m.stack.pop()
-			object := m.stack.pop()
-			m.stack.push(object.Call(g.Protocols.Index, g.Args{index}))
+			value := m.stack.pop()
+			m.stack.push(value.Call(g.Protocols.Index, g.Args{index}))
+
+		case op.AttributeGet:
+			value := m.stack.pop()
+			attr := g.NewObjectString(ins.Arg.(string))
+			m.stack.push(value.Call(g.Protocols.GetAttr, g.Args{attr}))
 
 		default:
 			assert.Unreached("unknown instruction: 0x%02x (%s) %#v", int(ins.Opcode), ins.Opcode.Name(), ins)

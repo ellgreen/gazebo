@@ -14,7 +14,7 @@ func TestCompile(t *testing.T) {
 
 	assert := assert.New(t)
 
-	code := Compile("(if (> 0 1) (println true) (println false)) (println i[1])")
+	code := Compile("(if (> 0 1) (println true) (println false)) (println i[1] t[.test])")
 
 	exp := Code{
 		op.LoadName.Ins(">"),
@@ -33,7 +33,9 @@ func TestCompile(t *testing.T) {
 		op.LoadName.Ins("i"),
 		op.LoadConst.Ins(float64(1)),
 		op.IndexGet.Ins(nil),
-		op.CallFunc.Ins(1),
+		op.LoadName.Ins("t"),
+		op.AttributeGet.Ins("test"),
+		op.CallFunc.Ins(2),
 	}
 
 	assert.Equal(exp, code)
