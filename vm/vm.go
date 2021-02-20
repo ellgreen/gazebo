@@ -140,8 +140,13 @@ func (m *VM) Run(code compiler.Code) g.Object {
 
 			m.stack.push(g.NewObjectList(values))
 
+		case op.IndexGet:
+			index := m.stack.pop()
+			object := m.stack.pop()
+			m.stack.push(object.Call(g.Protocols.Index, g.Args{index}))
+
 		default:
-			assert.Unreached("unknown instruction: %v", ins)
+			assert.Unreached("unknown instruction: 0x%02x (%s) %#v", int(ins.Opcode), ins.Opcode.Name(), ins)
 		}
 	}
 

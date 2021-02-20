@@ -24,6 +24,7 @@ const (
 	MakeFunc
 	LoadModule
 	MakeList
+	IndexGet
 )
 
 // Ins creates an Instruction for an Opcode
@@ -46,6 +47,7 @@ func (op Opcode) Name() string {
 		MakeFunc:       "op.MakeFunc",
 		LoadModule:     "op.LoadModule",
 		MakeList:       "op.MakeList",
+		IndexGet:       "op.IndexGet",
 	}
 
 	if name, ok := names[op]; ok {

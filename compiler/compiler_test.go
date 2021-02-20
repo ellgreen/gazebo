@@ -4,15 +4,17 @@ import (
 	"testing"
 
 	"github.com/johnfrankmorgan/gazebo/compiler/op"
+	"github.com/johnfrankmorgan/gazebo/debug"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCompile(t *testing.T) {
+	debug.Enable()
+	defer debug.Disable()
+
 	assert := assert.New(t)
 
-	code := Compile("(if (> 0 1) (println true) (println false))")
-
-	code.Dump()
+	code := Compile("(if (> 0 1) (println true) (println false)) (println i[1])")
 
 	exp := Code{
 		op.LoadName.Ins(">"),
@@ -26,6 +28,11 @@ func TestCompile(t *testing.T) {
 		op.RelJump.Ins(3),
 		op.LoadName.Ins("println"),
 		op.LoadName.Ins("true"),
+		op.CallFunc.Ins(1),
+		op.LoadName.Ins("println"),
+		op.LoadName.Ins("i"),
+		op.LoadConst.Ins(float64(1)),
+		op.IndexGet.Ins(nil),
 		op.CallFunc.Ins(1),
 	}
 
