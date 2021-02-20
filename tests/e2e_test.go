@@ -24,7 +24,10 @@ func TestGazScripts(t *testing.T) {
 				t.Error(err)
 			}
 
-			code := compiler.Compile(string(source))
+			code, err := compiler.Compile(string(source))
+			if err != nil {
+				t.Error(err)
+			}
 
 			vm.New().Run(code)
 		})

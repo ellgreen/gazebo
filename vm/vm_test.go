@@ -12,6 +12,8 @@ var (
 )
 
 func init() {
+	var err error
+
 	source := `
 		(let N 20)
 		(fun fib (n) (
@@ -24,7 +26,11 @@ func init() {
 		(fib N)
 	`
 
-	code = compiler.Compile(source)
+	code, err = compiler.Compile(source)
+	if err != nil {
+		panic(err)
+	}
+
 	vm = New()
 }
 
