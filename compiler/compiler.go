@@ -6,6 +6,7 @@ import (
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler/op"
 	"github.com/johnfrankmorgan/gazebo/debug"
+	"github.com/johnfrankmorgan/gazebo/errors"
 )
 
 // Code is a slice containing executable bytecode
@@ -25,11 +26,23 @@ func (m Code) Dump() {
 }
 
 // Compile compiles gazebo code into a Code object
-func Compile(source string) Code {
-	var (
-		code     Code
-		compiler compiler
-	)
+func Compile(source string) (code Code, err error) {
+	defer func() {
+		recovered := recover()
+
+		if recovered == nil {
+			return
+		}
+
+		if gerr, ok := recovered.(*errors.Error); ok {
+			err = gerr
+			return
+		}
+
+		panic(recovered)
+	}()
+
+	var compiler compiler
 
 	expr := parse(source)
 
@@ -37,7 +50,7 @@ func Compile(source string) Code {
 		expr.dump(0)
 	}
 
-	assert.False(expr.atom())
+	errors.ErrParse.Expect(!expr.atom(), "unexpected atom, expecting list")
 
 	for _, expr := range expr.children {
 		code = append(code, compiler.compile(expr)...)
@@ -47,7 +60,7 @@ func Compile(source string) Code {
 		code.Dump()
 	}
 
-	return code
+	return code, nil
 }
 
 type compiler struct{}
@@ -63,15 +76,22 @@ func (m *compiler) compile(expr *sexpr) Code {
 
 	switch expr.children[0].token.value {
 	case "let":
-		assert.Len(expr.children, 3)
-		assert.True(expr.children[1].atom())
+		errors.ErrParse.ExpectLen(expr.children, 3, "invalid let syntax")
+
+		errors.ErrParse.Expect(
+			expr.children[1].token.is(tkident),
+			"expected %s, got %s",
+			tkident.name(),
+			expr.children[1].token.typ.name(),
+		)
+
 		return append(
 			m.compile(expr.children[2]),
 			op.StoreName.Ins(expr.children[1].token.value),
 		)
 
 	case "if":
-		assert.Len(expr.children, 4)
+		errors.ErrParse.ExpectLen(expr.children, 4, "invalid if syntax")
 		truepath := m.compile(expr.children[2])
 		falsepath := append(
 			m.compile(expr.children[3]),
@@ -85,7 +105,7 @@ func (m *compiler) compile(expr *sexpr) Code {
 		return append(code, truepath...)
 
 	case "while":
-		assert.Len(expr.children, 3)
+		errors.ErrParse.ExpectLen(expr.children, 3, "invalid while syntax")
 		body := m.compile(expr.children[2])
 		cond := append(
 			m.compile(expr.children[1]),
@@ -101,9 +121,10 @@ func (m *compiler) compile(expr *sexpr) Code {
 		if len(expr.children) == 3 {
 			params := []string{}
 			for _, param := range expr.children[1].children {
-				assert.True(
-					param.atom() && param.token.is(tkident),
-					"function parameters must be identifiers",
+				errors.ErrParse.Expect(
+					param.token.is(tkident),
+					"function parameters must be identifiers, got %s",
+					param.token.typ.name(),
 				)
 
 				params = append(params, param.token.value)
@@ -115,9 +136,10 @@ func (m *compiler) compile(expr *sexpr) Code {
 			return append(code, op.MakeFunc.Ins(len(params)))
 
 		} else if len(expr.children) == 4 {
-			assert.True(
-				expr.children[1].atom() && expr.children[1].token.is(tkident),
-				"function name must be a valid identifier",
+			errors.ErrParse.Expect(
+				expr.children[1].token.is(tkident),
+				"function name must be a valid identifier, got %s",
+				expr.children[1].token.typ.name(),
 			)
 			name := expr.children[1].token.value
 			params := expr.children[2]
@@ -128,16 +150,17 @@ func (m *compiler) compile(expr *sexpr) Code {
 			)
 		}
 
-		assert.Unreached("fun keyword should contain 3 or 4 children, got %d", len(expr.children))
+		errors.ErrParse.Panic("invalid fun syntax")
 
 	case "load":
-		assert.True(len(expr.children) >= 2)
+		errors.ErrParse.ExpectAtLeast(expr.children, 2, "invalid load syntax")
 		code := Code{}
 
 		for _, expr := range expr.children[1:] {
-			assert.True(
-				expr.atom() && expr.token.is(tkident),
-				"load parameters must be identifiers",
+			errors.ErrParse.Expect(
+				expr.token.is(tkident),
+				"load parameters must be identifiers, got %s",
+				expr.token.typ.name(),
 			)
 
 			code = append(code, op.LoadModule.Ins(expr.token.value))
@@ -146,7 +169,7 @@ func (m *compiler) compile(expr *sexpr) Code {
 		return code
 
 	case "list":
-		assert.Len(expr.children, 2)
+		errors.ErrParse.ExpectLen(expr.children, 2, "invalid list syntax")
 
 		code := Code{}
 		length := 0
@@ -160,8 +183,13 @@ func (m *compiler) compile(expr *sexpr) Code {
 	}
 
 	if expr.children[0].token.is(tkbracketopen) {
-		assert.Len(expr.children, 3, "invalid index syntax")
-		assert.True(expr.children[2].token.is(tkbracketclose), "missing closing ]")
+		errors.ErrParse.ExpectLen(expr.children, 3, "invalid index syntax")
+		errors.ErrParse.Expect(
+			expr.children[2].token.is(tkbracketclose),
+			"expected %s, got %s",
+			tkbracketclose.name(),
+			expr.children[2].token.typ.name(),
+		)
 		if expr.children[1].token.is(tkident) && expr.children[1].token.value[0] == '.' {
 			return Code{op.AttributeGet.Ins(expr.children[1].token.value[1:])}
 		}

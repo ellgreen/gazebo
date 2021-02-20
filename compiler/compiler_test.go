@@ -5,6 +5,7 @@ import (
 
 	"github.com/johnfrankmorgan/gazebo/compiler/op"
 	"github.com/johnfrankmorgan/gazebo/debug"
+	"github.com/johnfrankmorgan/gazebo/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +15,9 @@ func TestCompile(t *testing.T) {
 
 	assert := assert.New(t)
 
-	code := Compile("(if (> 0 1) (println true) (println false)) (println i[1] t[.test])")
+	code, err := Compile("(if (> 0 1) (println true) (println false)) (println i[1] t[.test])")
+
+	assert.Nil(err)
 
 	exp := Code{
 		op.LoadName.Ins(">"),
@@ -39,4 +42,11 @@ func TestCompile(t *testing.T) {
 	}
 
 	assert.Equal(exp, code)
+}
+
+func TestCompileError(t *testing.T) {
+	assert := assert.New(t)
+
+	_, err := Compile("(")
+	assert.ErrorIs(err, errors.ErrEOF)
 }
