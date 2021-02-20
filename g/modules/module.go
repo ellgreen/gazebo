@@ -6,6 +6,7 @@ import (
 	"github.com/johnfrankmorgan/gazebo/g"
 )
 
+// All returns all available modules
 func All() map[string]*Module {
 	return map[string]*Module{
 		"http": HTTP,
