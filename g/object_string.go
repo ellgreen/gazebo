@@ -2,15 +2,15 @@ package g
 
 // ObjectString is the underlying type of strings in gazebo
 type ObjectString struct {
-	object
+	PartialObject
 	value string
 }
 
 // NewObjectString creates a new string object
 func NewObjectString(value string) *ObjectString {
 	return &ObjectString{
-		object: object{typ: TypeString},
-		value:  value,
+		PartialObject: PartialObject{typ: TypeString},
+		value:         value,
 	}
 }
 

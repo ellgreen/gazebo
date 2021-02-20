@@ -2,12 +2,14 @@ package g
 
 // ObjectNil is the underlying type of nil in gazebo
 type ObjectNil struct {
-	object
+	PartialObject
 }
 
 // NewObjectNil creates a new nil object
 func NewObjectNil() *ObjectNil {
-	return &ObjectNil{object: object{typ: TypeNil}}
+	return &ObjectNil{
+		PartialObject: PartialObject{typ: TypeNil},
+	}
 }
 
 // Value satisfies the Object interface

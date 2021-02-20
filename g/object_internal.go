@@ -4,15 +4,15 @@ import "github.com/johnfrankmorgan/gazebo/assert"
 
 // ObjectInternal is used for values internal to the gazebo VM
 type ObjectInternal struct {
-	object
+	PartialObject
 	value interface{}
 }
 
 // NewObjectInternal creates a new internal object
 func NewObjectInternal(value interface{}) *ObjectInternal {
 	return &ObjectInternal{
-		object: object{typ: TypeInternal},
-		value:  value,
+		PartialObject: PartialObject{typ: TypeInternal},
+		value:         value,
 	}
 }
 

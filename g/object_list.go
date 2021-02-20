@@ -2,15 +2,15 @@ package g
 
 // ObjectList is the underlying type of lists in gazebo
 type ObjectList struct {
-	object
+	PartialObject
 	value []Object
 }
 
 // NewObjectList creates a new list object
 func NewObjectList(value []Object) *ObjectList {
 	return &ObjectList{
-		object: object{typ: TypeList},
-		value:  value,
+		PartialObject: PartialObject{typ: TypeList},
+		value:         value,
 	}
 }
 

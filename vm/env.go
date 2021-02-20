@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"github.com/johnfrankmorgan/gazebo/assert"
+	"github.com/johnfrankmorgan/gazebo/errors"
 	"github.com/johnfrankmorgan/gazebo/g"
 )
 
@@ -27,7 +27,7 @@ func (m *env) lookup(name string) g.Object {
 		return env.values.Get(name)
 	}
 
-	assert.Unreached("undefined name: %s", name)
+	errors.ErrRuntime.Panic("undefined name: %s", name)
 	return nil
 }
 
@@ -45,6 +45,6 @@ func (m *env) assign(name string, value g.Object) {
 		return
 	}
 
-	assert.Unreached("undefined name: %s", name)
+	errors.ErrRuntime.Panic("undefined name: %s", name)
 	return
 }

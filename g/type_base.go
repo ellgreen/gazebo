@@ -3,6 +3,8 @@ package g
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/johnfrankmorgan/gazebo/errors"
 )
 
 func initbase() {
@@ -58,9 +60,19 @@ func initbase() {
 					return self.Attributes().Get(name)
 				}
 
-				return NewObjectInternalFunc(func(args Args) Object {
-					return self.Call(name, args)
-				})
+				if self.Type().Implements(name) {
+					return NewObjectInternalFunc(func(args Args) Object {
+						return self.Call(name, args)
+					})
+				}
+
+				errors.ErrRuntime.Panic(
+					"undefined attribute or method %s for type %s",
+					name,
+					self.Type().Name,
+				)
+
+				return nil
 			}),
 
 			Protocols.SetAttr: Method(func(self Object, args Args) Object {

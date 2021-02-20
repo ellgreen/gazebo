@@ -42,23 +42,23 @@ func NewObject(value interface{}) Object {
 	return nil
 }
 
-// partial Object implementation
-type object struct {
+// PartialObject is a partial Object implementation
+type PartialObject struct {
 	typ        *Type
 	attributes Attributes
 }
 
 // Type returns the object's underlying Type
-func (m *object) Type() *Type {
+func (m *PartialObject) Type() *Type {
 	return m.typ
 }
 
 // Attributes returns the Object's attributes
-func (m *object) Attributes() *Attributes {
+func (m *PartialObject) Attributes() *Attributes {
 	return &m.attributes
 }
 
-func (m *object) call(self Object, method string, args Args) Object {
+func (m *PartialObject) call(self Object, method string, args Args) Object {
 	errors.ErrRuntime.Expect(
 		m.typ.Implements(method),
 		"type %s does not implement %s",
@@ -67,4 +67,14 @@ func (m *object) call(self Object, method string, args Args) Object {
 	)
 
 	return m.typ.Resolve(method)(self, args)
+}
+
+// CallMethod is an exported method that wraps PartialObject.call
+func (m *PartialObject) CallMethod(self Object, method string, args Args) Object {
+	return m.call(self, method, args)
+}
+
+// SetType is an exported method to allow modules to set an Object's type
+func (m *PartialObject) SetType(typ *Type) {
+	m.typ = typ
 }

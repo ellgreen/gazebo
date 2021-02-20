@@ -2,15 +2,15 @@ package g
 
 // ObjectNumber is the underlying type of numbers in gazebo
 type ObjectNumber struct {
-	object
+	PartialObject
 	value float64
 }
 
 // NewObjectNumber creates a new number object
 func NewObjectNumber(value float64) *ObjectNumber {
 	return &ObjectNumber{
-		object: object{typ: TypeNumber},
-		value:  value,
+		PartialObject: PartialObject{typ: TypeNumber},
+		value:         value,
 	}
 }
 

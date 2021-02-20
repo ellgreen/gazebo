@@ -1,0 +1,15 @@
+(load time)
+
+(let i 100)
+
+(let start (time.now))
+
+(while (> i 0) (
+  (println i)
+  (let i (i[.-] 1))
+  (time.sleep 10)
+))
+
+(let finish (time.now))
+
+(println "took:" (- (num finish) (num start)) "seconds")

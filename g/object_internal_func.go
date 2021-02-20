@@ -2,15 +2,15 @@ package g
 
 // ObjectInternalFunc is the underlying type of functions in gazebo
 type ObjectInternalFunc struct {
-	object
+	PartialObject
 	value Func
 }
 
 // NewObjectInternalFunc creates a new internal function object
 func NewObjectInternalFunc(value func(Args) Object) *ObjectInternalFunc {
 	return &ObjectInternalFunc{
-		object: object{typ: TypeInternalFunc},
-		value:  Func(value),
+		PartialObject: PartialObject{typ: TypeInternalFunc},
+		value:         Func(value),
 	}
 }
 
