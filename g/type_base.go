@@ -24,11 +24,9 @@ func initbase() {
 
 			Protocols.Inspect: Method(func(self Object, _ Args) Object {
 				inspection := fmt.Sprintf(
-					"<gtypes.%s %p>(%v %p)",
+					"<gtypes.%s>(%v)",
 					self.Type().Name,
-					self.Type(),
 					self.Value(),
-					self,
 				)
 
 				return NewObjectString(inspection)

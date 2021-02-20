@@ -159,5 +159,5 @@ func (m *VM) Run(code compiler.Code) g.Object {
 		return m.stack.pop()
 	}
 
-	return nil
+	return g.NewObjectNil()
 }
