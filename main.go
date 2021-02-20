@@ -1,13 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
+	"github.com/chzyer/readline"
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler"
 	"github.com/johnfrankmorgan/gazebo/debug"
@@ -26,7 +25,11 @@ func main() {
 	}
 
 	if len(flag.Args()) == 0 {
-		repl()
+		repl := newrepl()
+		defer repl.rl.Close()
+
+		repl.loop()
+
 		return
 	}
 
@@ -44,62 +47,69 @@ func main() {
 	assert.Nil(err)
 }
 
-func repl() {
-	var (
-		buffer strings.Builder
-		more   bool
-	)
+type repl struct {
+	vm     *vm.VM
+	rl     *readline.Instance
+	buffer strings.Builder
+	more   bool
+}
 
-	vm := vm.New()
+func newrepl() *repl {
+	rl, err := readline.New("")
+	assert.Nil(err)
+
+	return &repl{vm: vm.New(), rl: rl}
+}
+
+func (m *repl) errorln(err error) {
+	fmt.Fprintf(m.rl.Stderr(), "%s\n", err.Error())
+}
+
+func (m *repl) reset() {
+	m.buffer.Reset()
+	m.more = false
+}
+
+func (m *repl) loop() {
+	prompts := map[bool]string{
+		false: ">>> ",
+		true:  "... ",
+	}
 
 	for {
-		if more {
-			fmt.Printf("... ")
-		} else {
-			fmt.Printf(">>> ")
+		m.rl.SetPrompt(prompts[m.more])
+
+		line, err := m.rl.Readline()
+		if err != nil {
+			m.errorln(err)
+			break
 		}
 
-		scanner := bufio.NewScanner(os.Stdin)
-		if scanner.Scan() {
-			buffer.WriteString(scanner.Text())
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "(") || !strings.HasSuffix(line, ")") {
+			line = fmt.Sprintf("(%s)", line)
 		}
 
-		if err := scanner.Err(); err != nil {
-			fmt.Fprintf(os.Stderr, "%s", err.Error())
-			buffer.Reset()
-			more = false
+		code, err := compiler.Compile(line)
+		if err == errors.ErrEOF {
+			m.more = true
+			m.buffer.WriteByte(' ')
+			continue
+		} else if err != nil {
+			m.errorln(err)
+			m.reset()
 			continue
 		}
 
-		source := strings.TrimSpace(buffer.String())
-		if len(source) > 0 && source[0] != '(' {
-			source = fmt.Sprintf("(%s)", source)
-		}
-
-		code, err := compiler.Compile(source)
+		result, err := m.vm.Run(code)
 		if err != nil {
-			if err == errors.ErrEOF {
-				more = true
-				buffer.WriteByte(' ')
-			} else {
-				fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-				buffer.Reset()
-				more = false
-			}
-
-			continue
-		}
-
-		result, err := vm.Run(code)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			m.errorln(err)
 		}
 
 		if result != nil && result.Type() != g.TypeNil {
 			fmt.Printf("%v\n", result.Call(g.Protocols.Inspect, nil).Value())
 		}
 
-		buffer.Reset()
-		more = false
+		m.reset()
 	}
 }
