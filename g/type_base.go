@@ -46,12 +46,23 @@ func initbase() {
 
 			Protocols.HasAttr: Method(func(self Object, args Args) Object {
 				name := EnsureString(args.Self()).String()
-				return NewObjectBool(self.Attributes().Has(name))
+				if self.Attributes().Has(name) {
+					return NewObjectBool(true)
+				}
+
+				return NewObjectBool(self.Type().Implements(name))
 			}),
 
 			Protocols.GetAttr: Method(func(self Object, args Args) Object {
 				name := EnsureString(args.Self()).String()
-				return self.Attributes().Get(name)
+
+				if self.Attributes().Has(name) {
+					return self.Attributes().Get(name)
+				}
+
+				return NewObjectInternalFunc(func(args Args) Object {
+					return self.Call(name, args)
+				})
 			}),
 
 			Protocols.SetAttr: Method(func(self Object, args Args) Object {

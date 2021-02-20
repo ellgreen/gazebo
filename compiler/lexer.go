@@ -41,6 +41,8 @@ const (
 	tkinvalid tokentype = iota
 	tkparenopen
 	tkparenclose
+	tkbracketopen
+	tkbracketclose
 	tkcomment
 	tkwhitespace
 	tkstring
@@ -54,14 +56,16 @@ func (typ tokentype) valid() bool {
 
 func (typ tokentype) name() string {
 	names := map[tokentype]string{
-		tkinvalid:    "tkinvalid",
-		tkparenopen:  "tkparenopen",
-		tkparenclose: "tkparenclose",
-		tkcomment:    "tkcomment",
-		tkwhitespace: "tkwhitespace",
-		tkstring:     "tkstring",
-		tkident:      "tkident",
-		tknumber:     "tknumber",
+		tkinvalid:      "tkinvalid",
+		tkparenopen:    "tkparenopen",
+		tkparenclose:   "tkparenclose",
+		tkbracketopen:  "tkbracketopen",
+		tkbracketclose: "tkbracketclose",
+		tkcomment:      "tkcomment",
+		tkwhitespace:   "tkwhitespace",
+		tkstring:       "tkstring",
+		tkident:        "tkident",
+		tknumber:       "tknumber",
 	}
 
 	if name, ok := names[typ]; ok {
@@ -76,7 +80,7 @@ type token struct {
 	value string
 }
 
-func (m *token) is(types ...tokentype) bool {
+func (m token) is(types ...tokentype) bool {
 	for _, typ := range types {
 		if m.typ == typ {
 			return true
@@ -84,6 +88,10 @@ func (m *token) is(types ...tokentype) bool {
 	}
 
 	return false
+}
+
+func (m token) atom() bool {
+	return m.is(tknumber, tkstring, tkident)
 }
 
 type lexer struct {
@@ -128,6 +136,10 @@ func (m *lexer) isalpha(ch rune) bool {
 }
 
 func (m *lexer) isidentchar(ch rune) bool {
+	if ch >= 0x1f600 { // > 😀
+		return true
+	}
+
 	if m.isalpha(ch) || m.isdigit(ch) {
 		return true
 	}
@@ -236,6 +248,12 @@ func (m *lexer) lex() token {
 
 	case ')':
 		return m.token(tkparenclose)
+
+	case '[':
+		return m.token(tkbracketopen)
+
+	case ']':
+		return m.token(tkbracketclose)
 
 	case ';':
 		return m.line(tkcomment)

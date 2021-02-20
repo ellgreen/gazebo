@@ -14,9 +14,14 @@ func parse(source string) *sexpr {
 		tokens.dump()
 	}
 
-	parser := parser{tokens: tokens}
+	expr, _ := _parse(tokens)
+	return expr
+}
 
-	return parser.parse()
+func _parse(tokens tokens) (*sexpr, int) {
+	parser := parser{tokens: tokens}
+	expr := parser.parse()
+	return expr, parser.position
 }
 
 type sexpr struct {
@@ -27,7 +32,7 @@ type sexpr struct {
 func (m *sexpr) dump(depth int) {
 	indent := strings.Repeat(" ", depth*2)
 
-	if m.atom() {
+	if m.atom() || m.token.is(tkbracketopen, tkbracketclose) {
 		debug.Printf("%s%s(%v)\n", indent, m.token.typ.name(), m.token.value)
 		return
 	}
@@ -42,7 +47,7 @@ func (m *sexpr) dump(depth int) {
 }
 
 func (m *sexpr) atom() bool {
-	return m.token.typ.valid()
+	return m.token.atom()
 }
 
 type parser struct {
@@ -69,15 +74,15 @@ func (m *parser) next() token {
 	return token
 }
 
-func (m *parser) subexpr(start int) []token {
-	assert.True(m.tokens[start].is(tkparenopen))
+func (m *parser) subexpr(start int, opener, closer tokentype) []token {
+	assert.True(m.tokens[start].is(opener))
 
 	depth := 0
 
 	for idx, token := range m.tokens[start:] {
-		if token.is(tkparenopen) {
+		if token.is(opener) {
 			depth++
-		} else if token.is(tkparenclose) {
+		} else if token.is(closer) {
 			depth--
 			if depth == 0 {
 				return m.tokens[start+1 : start+idx]
@@ -99,6 +104,20 @@ func (m *parser) parse() *sexpr {
 			continue
 		}
 
+		if token.is(tkbracketopen) {
+			subexpr, pos := _parse(m.subexpr(m.position-1, tkbracketopen, tkbracketclose))
+			children := []*sexpr{&sexpr{token: token}}
+			children = append(children, subexpr.children...)
+			children = append(children, &sexpr{token: m.tokens[m.position+pos]})
+
+			expr.children = append(expr.children, &sexpr{
+				children: children,
+			})
+
+			m.position += pos + 1
+			continue
+		}
+
 		if !token.is(tkparenopen) {
 			expr.children = append(expr.children, &sexpr{
 				token: token,
@@ -107,11 +126,10 @@ func (m *parser) parse() *sexpr {
 			continue
 		}
 
-		parser := parser{tokens: m.subexpr(m.position - 1)}
-		subexpr := parser.parse()
+		subexpr, pos := _parse(m.subexpr(m.position-1, tkparenopen, tkparenclose))
 		expr.children = append(expr.children, subexpr)
 
-		m.position += parser.position + 1
+		m.position += pos + 1
 	}
 
 	return expr

@@ -159,6 +159,15 @@ func (m *compiler) compile(expr *sexpr) Code {
 		return append(code, op.MakeList.Ins(length))
 	}
 
+	if expr.children[0].token.is(tkbracketopen) {
+		assert.Len(expr.children, 3, "invalid index syntax")
+		assert.True(expr.children[2].token.is(tkbracketclose), "missing closing ]")
+		if expr.children[1].token.is(tkident) && expr.children[1].token.value[0] == '.' {
+			return Code{op.AttributeGet.Ins(expr.children[1].token.value[1:])}
+		}
+		return append(m.compile(expr.children[1]), op.IndexGet.Ins(nil))
+	}
+
 	if !expr.children[0].atom() {
 		code := Code{}
 
@@ -174,6 +183,9 @@ func (m *compiler) compile(expr *sexpr) Code {
 
 	for _, arg := range expr.children[1:] {
 		function = append(function, m.compile(arg)...)
+		if len(arg.children) > 0 && arg.children[0].token.is(tkbracketopen) {
+			continue
+		}
 		argc++
 	}
 
