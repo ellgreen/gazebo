@@ -18,14 +18,14 @@ func All() map[string]*Module {
 // Module defines g.Object values
 type Module struct {
 	Name   string
-	Init   func()
+	Init   func(*Module)
 	Values map[string]g.Object
 }
 
 // Load loads a Module's values into a g.Attributes
 func (m *Module) Load(attrs *g.Attributes) {
 	if m.Init != nil {
-		m.Init()
+		m.Init(m)
 	}
 
 	for name, value := range m.Values {

@@ -95,7 +95,7 @@ func EnsureDuration(value g.Object) *ObjectDuration {
 // Time holds the definitions for the time module
 var Time = &Module{
 	Name: "time",
-	Init: func() {
+	Init: func(_ *Module) {
 		TypeTime = &g.Type{
 			Name:   "time.Time",
 			Parent: g.TypeBase,
