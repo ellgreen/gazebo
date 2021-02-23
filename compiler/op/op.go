@@ -16,6 +16,7 @@ const (
 	LoadConst
 	StoreName
 	LoadName
+	RemoveName
 	CallFunc
 	RelJump
 	RelJumpIfTrue
@@ -26,6 +27,9 @@ const (
 	MakeList
 	IndexGet
 	AttributeGet
+	AttributeSet
+	NoOp
+	Return
 )
 
 // Ins creates an Instruction for an Opcode
@@ -40,6 +44,7 @@ func (op Opcode) Name() string {
 		LoadConst:      "op.LoadConst",
 		StoreName:      "op.StoreName",
 		LoadName:       "op.LoadName",
+		RemoveName:     "op.RemoveName",
 		CallFunc:       "op.CallFunc",
 		RelJump:        "op.RelJump",
 		RelJumpIfTrue:  "op.RelJumpIfTrue",
@@ -50,6 +55,9 @@ func (op Opcode) Name() string {
 		MakeList:       "op.MakeList",
 		IndexGet:       "op.IndexGet",
 		AttributeGet:   "op.AttributeGet",
+		AttributeSet:   "op.AttributeSet",
+		NoOp:           "op.NoOp",
+		Return:         "op.Return",
 	}
 
 	if name, ok := names[op]; ok {

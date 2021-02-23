@@ -1,16 +1,20 @@
-(let a 0)
-(let b 1)
-(let tmp 0)
-(let iters 20)
-(
-  while iters (
-    (let iters (- iters 1))
+load time;
 
-    (printf "%4d: a: %6d, b: %6d\n" iters a b)
+a = 0
+b = 1
+tmp = 0
 
-    (let tmp b)
-    (let b (+ a b))
-    (let a tmp)
-  )
-)
-(printf "\n20th Fibonacci number is: %d\n" tmp)
+start = time.now()
+
+for (i = 0; i < 20; i += 1) {
+  tmp = b
+  b = a + b
+  a = tmp
+}
+
+time_taken = time.since(start)
+
+println("20th Fibonacci number:", tmp)
+println("Took", time_taken)
+
+unset tmp a b start

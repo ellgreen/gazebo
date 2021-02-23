@@ -14,8 +14,16 @@ func tokenize(source string) tokens {
 
 	lexer := lexer{source: []byte(strings.TrimSpace(source))}
 
-	for !lexer.finished() {
-		tokens = append(tokens, lexer.lex())
+	for {
+		tk := lexer.lex()
+
+		if !tk.is(tkwhitespace, tkcomment, tknewline) {
+			tokens = append(tokens, tk)
+		}
+
+		if tk.is(tkeof) {
+			break
+		}
 	}
 
 	return tokens
@@ -39,36 +47,112 @@ type tokentype int
 
 const (
 	tkinvalid tokentype = iota
+	tkcomment
+	tknewline
+	tkwhitespace
+	tksemicolon
+	tkdot
+	tkcomma
+	tkif
+	tkelse
+	tkreturn
+	tkwhile
+	tkfor
+	tkfun
+	tkunset
+	tkload
+	tkpass
 	tkparenopen
 	tkparenclose
+	tkbraceopen
+	tkbraceclose
 	tkbracketopen
 	tkbracketclose
-	tkcomment
-	tkwhitespace
+	tkequal
+	tkequalequal
+	tkbang
+	tkbangequal
+	tkplus
+	tkplusequal
+	tkminus
+	tkminusequal
+	tkstar
+	tkstarequal
+	tkslash
+	tkslashequal
+	tkless
+	tklessequal
+	tkgreater
+	tkgreaterequal
 	tkstring
-	tkident
 	tknumber
+	tkident
+	tkeof
 )
 
-func (typ tokentype) name() string {
+func (m tokentype) name() string {
 	names := map[tokentype]string{
 		tkinvalid:      "tkinvalid",
+		tkcomment:      "tkcomment",
+		tknewline:      "tknewline",
+		tkwhitespace:   "tkwhitespace",
+		tksemicolon:    "tksemicolon",
+		tkdot:          "tkdot",
+		tkcomma:        "tkcomma",
+		tkif:           "tkif",
+		tkelse:         "tkelse",
+		tkreturn:       "tkreturn",
+		tkwhile:        "tkwhile",
+		tkfor:          "tkfor",
+		tkfun:          "tkfun",
+		tkunset:        "tkunset",
+		tkload:         "tkload",
+		tkpass:         "tkpass",
 		tkparenopen:    "tkparenopen",
 		tkparenclose:   "tkparenclose",
+		tkbraceopen:    "tkbraceopen",
+		tkbraceclose:   "tkbraceclose",
 		tkbracketopen:  "tkbracketopen",
 		tkbracketclose: "tkbracketclose",
-		tkcomment:      "tkcomment",
-		tkwhitespace:   "tkwhitespace",
+		tkequal:        "tkequal",
+		tkequalequal:   "tkequalequal",
+		tkbang:         "tkbang",
+		tkbangequal:    "tkbangequal",
+		tkplus:         "tkplus",
+		tkplusequal:    "tkplusequal",
+		tkminus:        "tkminus",
+		tkminusequal:   "tkminusequal",
+		tkstar:         "tkstar",
+		tkstarequal:    "tkstarequal",
+		tkslash:        "tkslash",
+		tkslashequal:   "tkslashequal",
+		tkless:         "tkless",
+		tklessequal:    "tklessequal",
+		tkgreater:      "tkgreater",
+		tkgreaterequal: "tkgreaterequal",
 		tkstring:       "tkstring",
-		tkident:        "tkident",
 		tknumber:       "tknumber",
+		tkident:        "tkident",
+		tkeof:          "tkeof",
 	}
 
-	if name, ok := names[typ]; ok {
+	if name, ok := names[m]; ok {
 		return name
 	}
 
 	return "tkunknown"
+}
+
+var keywords = map[string]tokentype{
+	"if":     tkif,
+	"else":   tkelse,
+	"return": tkreturn,
+	"while":  tkwhile,
+	"for":    tkfor,
+	"fun":    tkfun,
+	"unset":  tkunset,
+	"load":   tkload,
+	"pass":   tkpass,
 }
 
 type token struct {
@@ -86,10 +170,6 @@ func (m token) is(types ...tokentype) bool {
 	return false
 }
 
-func (m token) atom() bool {
-	return m.is(tknumber, tkstring, tkident)
-}
-
 type lexer struct {
 	source   []byte
 	position int
@@ -97,7 +177,7 @@ type lexer struct {
 }
 
 func (m *lexer) unexpectedeof() token {
-	errors.ErrEOF.Panic("unexpected eof at byte offset %d", m.position)
+	errors.ErrEOF.Panic("unexpected eof at byte offset %d, %v", m.position, m.peek())
 	return m.token(tkinvalid)
 }
 
@@ -117,6 +197,19 @@ func (m *lexer) next() rune {
 	return ch
 }
 
+func (m *lexer) match(ch rune) bool {
+	if m.finished() {
+		return false
+	}
+
+	if m.peek() == ch {
+		m.next()
+		return true
+	}
+
+	return false
+}
+
 func (m *lexer) token(typ tokentype) token {
 	tk := token{typ: typ, value: m.buffer.String()}
 	m.buffer.Reset()
@@ -132,7 +225,7 @@ func (m *lexer) isalpha(ch rune) bool {
 }
 
 func (m *lexer) isidentchar(ch rune) bool {
-	if ch >= 0x1f600 { // > 😀
+	if ch >= 0x1f600 { // >= 😀
 		return true
 	}
 
@@ -140,13 +233,7 @@ func (m *lexer) isidentchar(ch rune) bool {
 		return true
 	}
 
-	identchars := []rune{
-		'!', '@', '£', '$', '%', '^', '&', '*',
-		'-', '_', '+', '=', '<', '>', '?', '/',
-		'.', '~', ':', ';',
-	}
-
-	for _, identch := range identchars {
+	for _, identch := range "!?@_$" {
 		if identch == ch {
 			return true
 		}
@@ -160,26 +247,24 @@ func (m *lexer) isnewline(ch rune) bool {
 }
 
 func (m *lexer) iswhitespace(ch rune) bool {
-	return ch == ' ' || ch == '\t' || m.isnewline(ch)
+	return ch == ' ' || ch == '\t'
 }
 
 func (m *lexer) line(typ tokentype) token {
 	for !m.finished() {
 		if m.isnewline(m.peek()) {
-			m.next()
-			return m.token(typ)
+			break
 		}
 
 		m.next()
 	}
 
-	return m.unexpectedeof()
+	return m.token(typ)
 }
 
 func (m *lexer) lstring() token {
 	for !m.finished() {
-		if m.peek() == '"' {
-			m.next()
+		if m.match('"') {
 			return m.token(tkstring)
 		}
 
@@ -202,48 +287,79 @@ func (m *lexer) lnumber() token {
 		}
 
 		if !m.isdigit(ch) {
-			return m.token(tknumber)
+			break
 		}
 
 		m.next()
 	}
 
-	return m.unexpectedeof()
+	return m.token(tknumber)
 }
 
 func (m *lexer) lident() token {
 	for !m.finished() {
 		if !m.isidentchar(m.peek()) {
-			return m.token(tkident)
+			break
 		}
 
 		m.next()
 	}
 
-	return m.unexpectedeof()
+	if typ, ok := keywords[m.buffer.String()]; ok {
+		return m.token(typ)
+	}
+
+	return m.token(tkident)
 }
 
 func (m *lexer) lwhitespace() token {
 	for !m.finished() {
 		if !m.iswhitespace(m.peek()) {
-			return m.token(tkwhitespace)
+			break
 		}
 
 		m.next()
 	}
 
-	return m.unexpectedeof()
+	return m.token(tkwhitespace)
+}
+
+func (m *lexer) ifmatch(ch rune, typ, fallback tokentype) token {
+	if m.match(ch) {
+		return m.token(typ)
+	}
+
+	return m.token(fallback)
 }
 
 func (m *lexer) lex() token {
+	if m.finished() {
+		return m.token(tkeof)
+	}
+
 	ch := m.next()
 
 	switch ch {
+	case ';':
+		return m.token(tksemicolon)
+
+	case '.':
+		return m.token(tkdot)
+
+	case ',':
+		return m.token(tkcomma)
+
 	case '(':
 		return m.token(tkparenopen)
 
 	case ')':
 		return m.token(tkparenclose)
+
+	case '{':
+		return m.token(tkbraceopen)
+
+	case '}':
+		return m.token(tkbraceclose)
 
 	case '[':
 		return m.token(tkbracketopen)
@@ -251,11 +367,40 @@ func (m *lexer) lex() token {
 	case ']':
 		return m.token(tkbracketclose)
 
-	case ';':
-		return m.line(tkcomment)
+	case '+':
+		return m.ifmatch('=', tkplusequal, tkplus)
+
+	case '-':
+		return m.ifmatch('=', tkminusequal, tkminus)
+
+	case '*':
+		return m.ifmatch('=', tkstarequal, tkstar)
+
+	case '/':
+		if m.match('/') {
+			return m.line(tkcomment)
+		}
+
+		return m.ifmatch('=', tkslashequal, tkslash)
+
+	case '=':
+		return m.ifmatch('=', tkequalequal, tkequal)
+
+	case '!':
+		return m.ifmatch('=', tkbangequal, tkbang)
+
+	case '<':
+		return m.ifmatch('=', tklessequal, tkless)
+
+	case '>':
+		return m.ifmatch('=', tkgreaterequal, tkgreater)
 
 	case '"':
 		return m.lstring()
+	}
+
+	if m.isnewline(ch) {
+		return m.token(tknewline)
 	}
 
 	if m.isdigit(ch) {

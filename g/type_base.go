@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/johnfrankmorgan/gazebo/errors"
+	"github.com/johnfrankmorgan/gazebo/protocols"
 )
 
 func initbase() {
@@ -12,19 +13,23 @@ func initbase() {
 		Name:   "Base",
 		Parent: nil,
 		Methods: Methods{
-			Protocols.ToBool: Method(func(_ Object, _ Args) Object {
+			protocols.Bool: Method(func(_ Object, _ Args) Object {
 				return NewObjectBool(true)
 			}),
 
-			Protocols.ToString: Method(func(self Object, _ Args) Object {
+			protocols.Not: Method(func(self Object, _ Args) Object {
+				return NewObjectBool(!IsTruthy(self))
+			}),
+
+			protocols.String: Method(func(self Object, _ Args) Object {
 				return NewObjectString(fmt.Sprintf("%v", self.Value()))
 			}),
 
-			Protocols.ToNumber: Method(func(self Object, _ Args) Object {
+			protocols.Number: Method(func(self Object, _ Args) Object {
 				return NewObjectNumber(0)
 			}),
 
-			Protocols.Inspect: Method(func(self Object, _ Args) Object {
+			protocols.Inspect: Method(func(self Object, _ Args) Object {
 				inspection := fmt.Sprintf(
 					"<gtypes.%s>(%v)",
 					self.Type().Name,
@@ -34,7 +39,7 @@ func initbase() {
 				return NewObjectString(inspection)
 			}),
 
-			Protocols.Equal: Method(func(self Object, args Args) Object {
+			protocols.Equal: Method(func(self Object, args Args) Object {
 				for _, arg := range args {
 					if !reflect.DeepEqual(self.Value(), arg.Value()) {
 						return NewObjectBool(false)
@@ -44,7 +49,11 @@ func initbase() {
 				return NewObjectBool(true)
 			}),
 
-			Protocols.HasAttr: Method(func(self Object, args Args) Object {
+			protocols.NotEqual: Method(func(self Object, args Args) Object {
+				return NewObjectBool(!EnsureBool(self.Call(protocols.Equal, args)).Bool())
+			}),
+
+			protocols.HasAttr: Method(func(self Object, args Args) Object {
 				name := EnsureString(args.Self()).String()
 				if self.Attributes().Has(name) {
 					return NewObjectBool(true)
@@ -53,7 +62,7 @@ func initbase() {
 				return NewObjectBool(self.Type().Implements(name))
 			}),
 
-			Protocols.GetAttr: Method(func(self Object, args Args) Object {
+			protocols.GetAttr: Method(func(self Object, args Args) Object {
 				name := EnsureString(args.Self()).String()
 
 				if self.Attributes().Has(name) {
@@ -75,7 +84,7 @@ func initbase() {
 				return nil
 			}),
 
-			Protocols.SetAttr: Method(func(self Object, args Args) Object {
+			protocols.SetAttr: Method(func(self Object, args Args) Object {
 				args.Expects(2)
 
 				name := EnsureString(args.Self()).String()
@@ -85,7 +94,7 @@ func initbase() {
 				return NewObjectNil()
 			}),
 
-			Protocols.DelAttr: Method(func(self Object, args Args) Object {
+			protocols.DelAttr: Method(func(self Object, args Args) Object {
 				name := EnsureString(args.Self()).String()
 
 				self.Attributes().Delete(name)

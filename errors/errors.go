@@ -9,8 +9,25 @@ import (
 var (
 	ErrEOF     *Error = &Error{prefix: "unexpected eof"}
 	ErrParse   *Error = &Error{prefix: "parse error"}
+	ErrCompile *Error = &Error{prefix: "compile error"}
 	ErrRuntime *Error = &Error{prefix: "runtime error"}
 )
+
+// Handle sets err if a recoverable error occurs
+func Handle(err *error) {
+	recovered := recover()
+
+	if recovered == nil {
+		return
+	}
+
+	if gerr, ok := recovered.(*Error); ok {
+		*err = gerr
+		return
+	}
+
+	panic(recovered)
+}
 
 // Error is an error implementation
 type Error struct {

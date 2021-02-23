@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCompile(t *testing.T) {
+func TestParser(t *testing.T) {
 	assert := assert.New(t)
 
 	source, err := ioutil.ReadFile("../tests/gaz/test-fixture-1.gaz")
 	assert.Nil(err)
 
-	_, err = Compile(string(source))
-	assert.Nil(err)
+	parser := parser{tokens: tokenize(string(source))}
+	assert.Len(parser.parse(), 9)
 }

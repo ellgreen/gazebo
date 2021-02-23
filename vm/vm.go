@@ -7,6 +7,7 @@ import (
 	"github.com/johnfrankmorgan/gazebo/errors"
 	"github.com/johnfrankmorgan/gazebo/g"
 	"github.com/johnfrankmorgan/gazebo/g/modules"
+	"github.com/johnfrankmorgan/gazebo/protocols"
 )
 
 // VM is the structure responsible for running code and keeping track of state
@@ -41,20 +42,7 @@ func New(argv ...string) *VM {
 
 // Run runs the provided code
 func (m *VM) Run(code compiler.Code) (value g.Object, err error) {
-	defer func() {
-		recovered := recover()
-
-		if recovered == nil {
-			return
-		}
-
-		if gerr, ok := recovered.(*errors.Error); ok {
-			err = gerr
-			return
-		}
-
-		panic(recovered)
-	}()
+	defer errors.Handle(&err)
 
 	value = m.run(code)
 	return
@@ -63,6 +51,7 @@ func (m *VM) Run(code compiler.Code) (value g.Object, err error) {
 func (m *VM) run(code compiler.Code) g.Object {
 	var pc int
 
+loop:
 	for pc < len(code) {
 		ins := code[pc]
 		pc++
@@ -83,6 +72,10 @@ func (m *VM) run(code compiler.Code) g.Object {
 			name := ins.Arg.(string)
 			m.stack.push(m.env.lookup(name))
 
+		case op.RemoveName:
+			name := ins.Arg.(string)
+			m.env.remove(name)
+
 		case op.CallFunc:
 			argc := ins.Arg.(int)
 			args := make(g.Args, argc)
@@ -99,6 +92,14 @@ func (m *VM) run(code compiler.Code) g.Object {
 
 			case g.TypeFunc:
 				fun := g.EnsureFunc(fun)
+
+				errors.ErrRuntime.ExpectLen(
+					fun.Params(),
+					len(args),
+					"expected %d args, got %d",
+					len(fun.Params()),
+					len(args),
+				)
 
 				vmenv := m.env
 				env := &env{
@@ -149,7 +150,7 @@ func (m *VM) run(code compiler.Code) g.Object {
 
 			errors.ErrRuntime.Expect(ok, "undefined module: %s", name)
 
-			module.Load(&m.env.values)
+			m.env.define(name, module.Load())
 
 		case op.MakeList:
 			length := ins.Arg.(int)
@@ -164,12 +165,24 @@ func (m *VM) run(code compiler.Code) g.Object {
 		case op.IndexGet:
 			index := m.stack.pop()
 			value := m.stack.pop()
-			m.stack.push(value.Call(g.Protocols.Index, g.Args{index}))
+			m.stack.push(value.Call(protocols.Index, g.Args{index}))
 
 		case op.AttributeGet:
 			value := m.stack.pop()
 			attr := g.NewObjectString(ins.Arg.(string))
-			m.stack.push(value.Call(g.Protocols.GetAttr, g.Args{attr}))
+			m.stack.push(value.Call(protocols.GetAttr, g.Args{attr}))
+
+		case op.AttributeSet:
+			value := m.stack.pop()
+			object := m.stack.pop()
+			attr := g.NewObjectString(ins.Arg.(string))
+			m.stack.push(object.Call(protocols.SetAttr, g.Args{attr, value}))
+
+		case op.NoOp:
+			//
+
+		case op.Return:
+			break loop
 
 		default:
 			assert.Unreached("unknown instruction: 0x%02x (%s) %#v", int(ins.Opcode), ins.Opcode.Name(), ins)
