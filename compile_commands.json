@@ -1,0 +1,19 @@
+[
+  {
+    "arguments": [
+      "/usr/local/Cellar/gcc/10.2.0/bin/gcc-10",
+      "-I./include",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "src/malloc.c",
+      "-o",
+      "src/malloc.o"
+    ],
+    "directory": "/Users/frank/gazebo",
+    "file": "/Users/frank/gazebo/src/malloc.c",
+    "output": "/Users/frank/gazebo/src/malloc.o"
+  }
+]

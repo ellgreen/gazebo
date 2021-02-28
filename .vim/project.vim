@@ -5,4 +5,6 @@ augroup project
 augroup END
 
 let &path.="include,"
+
 nnoremap <C-M> :make!<CR>
+nnoremap <Leader>h :CocCommand clangd.switchSourceHeader<CR>

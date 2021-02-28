@@ -1,6 +1,6 @@
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
 AlignOperands: true
 AlignEscapedNewlines: true
 AllowShortFunctionsOnASingleLine: false
@@ -21,7 +21,7 @@ ColumnLimit: 100
 IndentCaseLabels: false
 IndentWidth: 4
 MaxEmptyLinesToKeep: 1
-PointerAlignment: Right
+PointerAlignment: Left
 SortIncludes: true
 SpaceAfterCStyleCast: false
 SpaceBeforeAssignmentOperators: true

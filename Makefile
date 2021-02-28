@@ -1,6 +1,10 @@
 CC = gcc
 CFLAGS = -I./include -g -Wall -Wextra -Wpedantic
+CFLAGS += -DG_DEBUG_MEM
+CFLAGS += -DG_DEBUG_STRING
+CFLAGS += -DG_DEBUG_FS
 
+C_HED = $(shell find include -type f -name '*.h')
 C_SRC = $(wildcard src/*.c)
 C_OBJ = $(C_SRC:.c=.o)
 
@@ -14,3 +18,10 @@ $(PROG): $(C_OBJ)
 
 clean:
 	rm -f $(PROG) src/*.o
+
+compilecmd:
+	make clean
+	bear -- make
+
+format:
+	clang-format -i $(C_HED) $(C_SRC)
