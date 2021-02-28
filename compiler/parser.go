@@ -149,7 +149,7 @@ func (m *parser) expect(typ ...tokentype) token {
 }
 
 func (m *parser) expression() expression {
-	return m.equality()
+	return m.logical()
 }
 
 func (m *parser) binary(next func() expression, expected ...tokentype) expression {
@@ -160,6 +160,24 @@ func (m *parser) binary(next func() expression, expected ...tokentype) expressio
 			op:    m.prev(),
 			left:  expr,
 			right: next(),
+		}
+	}
+
+	return expr
+}
+
+func (m *parser) logical() expression {
+	return m.binary(m.contains, tkand, tkor)
+}
+
+func (m *parser) contains() expression {
+	expr := m.equality()
+
+	if m.match(tkin) {
+		return &exprbinary{
+			op:    m.prev(),
+			left:  m.expression(),
+			right: expr,
 		}
 	}
 
@@ -262,7 +280,7 @@ func (m *parser) primary() expression {
 	}
 
 	errors.ErrParse.Panic(
-		"unexpected %s %s near token offset %d",
+		"unexpected %s %q near token offset %d",
 		m.peek().typ.name(),
 		m.peek().value,
 		m.position,
@@ -312,8 +330,8 @@ func (m *parser) statement() statement {
 	case tkbraceopen:
 		return m.block()
 
-	case tkunset:
-		return m.unset()
+	case tkdel:
+		return m.del()
 
 	case tkif:
 		return m.ifstmt()
@@ -326,6 +344,14 @@ func (m *parser) statement() statement {
 
 	case tkload:
 		return m.load()
+
+	case tkbreak:
+		m.next()
+		return &stmtbreak{}
+
+	case tkcontinue:
+		m.next()
+		return &stmtcontinue{}
 	}
 
 	expr := m.expression()
@@ -375,24 +401,31 @@ func (m *parser) assignment() statement {
 	}
 }
 
-func (m *parser) unset() statement {
-	var stmt stmtunset
+func (m *parser) del() statement {
+	m.expect(tkdel)
 
-	m.expect(tkunset)
+	expr := m.expression()
 
-	for !m.finished() {
-		if m.match(tksemicolon) {
-			break
+	switch expr := expr.(type) {
+	case *exprliteral:
+		errors.ErrParse.Expect(
+			expr.token.is(tkident),
+			"expected tkident, got %s: %q",
+			expr.token.typ.name(),
+			expr.token.value,
+		)
+
+		return &stmtdel{name: expr.token.value}
+
+	case *exprgetattr:
+		return &stmtdelattr{
+			expr: expr.expr,
+			name: expr.name,
 		}
-
-		if !m.check(tkident) {
-			break
-		}
-
-		stmt.names = append(stmt.names, m.next().value)
 	}
 
-	return &stmt
+	errors.ErrParse.Panic("failed to parse expression: %v", expr)
+	return nil
 }
 
 func (m *parser) ifstmt() statement {

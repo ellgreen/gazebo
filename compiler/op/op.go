@@ -13,23 +13,30 @@ type Opcode int
 // Enumeration of available opcodes
 const (
 	Invalid Opcode = iota
+	Placeholder
+	PushValue
 	LoadConst
-	StoreName
-	LoadName
-	RemoveName
+	GetName
+	SetName
+	DelName
 	CallFunc
 	RelJump
 	RelJumpIfTrue
 	RelJumpIfFalse
-	PushValue
 	MakeFunc
-	LoadModule
 	MakeList
-	IndexGet
-	AttributeGet
-	AttributeSet
-	NoOp
+	GetAttr
+	SetAttr
+	DelAttr
 	Return
+	LoadModule
+	NoOp
+)
+
+// Placeholder values
+const (
+	PlaceholderBreak    = -1
+	PlaceholderContinue = -2
 )
 
 // Ins creates an Instruction for an Opcode
@@ -41,23 +48,24 @@ func (op Opcode) Ins(arg interface{}) Instruction {
 func (op Opcode) Name() string {
 	names := map[Opcode]string{
 		Invalid:        "op.Invalid",
+		Placeholder:    "op.Placeholder",
+		PushValue:      "op.PushValue",
 		LoadConst:      "op.LoadConst",
-		StoreName:      "op.StoreName",
-		LoadName:       "op.LoadName",
-		RemoveName:     "op.RemoveName",
+		GetName:        "op.GetName",
+		SetName:        "op.SetName",
+		DelName:        "op.DelName",
 		CallFunc:       "op.CallFunc",
 		RelJump:        "op.RelJump",
 		RelJumpIfTrue:  "op.RelJumpIfTrue",
 		RelJumpIfFalse: "op.RelJumpIfFalse",
-		PushValue:      "op.PushValue",
 		MakeFunc:       "op.MakeFunc",
-		LoadModule:     "op.LoadModule",
 		MakeList:       "op.MakeList",
-		IndexGet:       "op.IndexGet",
-		AttributeGet:   "op.AttributeGet",
-		AttributeSet:   "op.AttributeSet",
-		NoOp:           "op.NoOp",
+		GetAttr:        "op.GetAttr",
+		SetAttr:        "op.SetAttr",
+		DelAttr:        "op.DelAttr",
 		Return:         "op.Return",
+		LoadModule:     "op.LoadModule",
+		NoOp:           "op.NoOp",
 	}
 
 	if name, ok := names[op]; ok {

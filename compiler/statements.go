@@ -8,6 +8,35 @@ type statement interface {
 	compiler
 }
 
+func fillbreak(code Code) Code {
+	for i, ins := range code {
+		if ins.Opcode != op.Placeholder || ins.Arg.(int) != op.PlaceholderBreak {
+			continue
+		}
+
+		code[i] = op.RelJump.Ins(len(code) - i - 1)
+	}
+
+	return code
+}
+
+func fillcontinue(code Code) Code {
+	for i, ins := range code {
+		if ins.Opcode != op.Placeholder || ins.Arg.(int) != op.PlaceholderContinue {
+			continue
+		}
+
+		code[i] = op.RelJump.Ins(-i - 1)
+	}
+
+	return code
+}
+
+func checkloop(code Code) Code {
+	code = fillbreak(code)
+	return fillcontinue(code)
+}
+
 type stmtexpr struct {
 	expr expression
 }
@@ -22,21 +51,24 @@ type stmtassign struct {
 }
 
 func (m *stmtassign) compile() Code {
-	return append(m.expr.compile(), op.StoreName.Ins(m.name))
+	return append(m.expr.compile(), op.SetName.Ins(m.name))
 }
 
-type stmtunset struct {
-	names []string
+type stmtdel struct {
+	name string
 }
 
-func (m *stmtunset) compile() Code {
-	code := Code{}
+func (m *stmtdel) compile() Code {
+	return Code{op.DelName.Ins(m.name)}
+}
 
-	for _, name := range m.names {
-		code = append(code, op.RemoveName.Ins(name))
-	}
+type stmtdelattr struct {
+	expr expression
+	name string
+}
 
-	return code
+func (m *stmtdelattr) compile() Code {
+	return append(m.expr.compile(), op.DelAttr.Ins(m.name))
 }
 
 type stmtblock struct {
@@ -84,7 +116,7 @@ func (m *stmtwhile) compile() Code {
 	body := m.body.compile()
 	cond := append(m.condition.compile(), op.RelJumpIfFalse.Ins(len(body)+1))
 	body = append(body, op.RelJump.Ins(-len(body)-len(cond)-1))
-	return append(cond, body...)
+	return checkloop(append(cond, body...))
 }
 
 type stmtload struct {
@@ -124,5 +156,17 @@ type stmtsetattr struct {
 func (m *stmtsetattr) compile() Code {
 	code := m.expr.compile()
 	code = append(code, m.value.compile()...)
-	return append(code, op.AttributeSet.Ins(m.name))
+	return append(code, op.SetAttr.Ins(m.name))
+}
+
+type stmtbreak struct{}
+
+func (m *stmtbreak) compile() Code {
+	return Code{op.Placeholder.Ins(op.PlaceholderBreak)}
+}
+
+type stmtcontinue struct{}
+
+func (m *stmtcontinue) compile() Code {
+	return Code{op.Placeholder.Ins(op.PlaceholderContinue)}
 }

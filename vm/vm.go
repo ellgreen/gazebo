@@ -1,48 +1,86 @@
 package vm
 
 import (
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler"
 	"github.com/johnfrankmorgan/gazebo/compiler/op"
 	"github.com/johnfrankmorgan/gazebo/errors"
 	"github.com/johnfrankmorgan/gazebo/g"
 	"github.com/johnfrankmorgan/gazebo/g/modules"
-	"github.com/johnfrankmorgan/gazebo/protocols"
+	"github.com/johnfrankmorgan/gazebo/g/modules/os"
+	"github.com/johnfrankmorgan/gazebo/g/modules/testing"
 )
 
-// VM is the structure responsible for running code and keeping track of state
 type VM struct {
-	stack   *stack
-	env     *env
-	modules map[string]*modules.Module
+	stack     *stack
+	env       *env
+	modules   map[string]modules.Module
+	errhandle bool
 }
 
-// New creates a new VM
-func New(argv ...string) *VM {
-	env := new(env)
-
-	for name, builtin := range g.Builtins() {
-		env.define(name, builtin)
+func New() *VM {
+	vm := &VM{
+		stack:     new(stack),
+		env:       new(env),
+		errhandle: true,
+		modules:   make(map[string]modules.Module),
 	}
 
-	gargv := g.NewObjectList(nil)
-
-	for _, arg := range argv {
-		gargv.Append(g.NewObjectString(arg))
+	for _, mod := range modules.All() {
+		vm.modules[mod.Name()] = mod
 	}
 
-	env.define("argv", gargv)
+	stdout := vm.modules["os"].(*os.OSModule).Stdout
+	stderr := vm.modules["os"].(*os.OSModule).Stderr
 
-	return &VM{
-		stack:   new(stack),
-		env:     env,
-		modules: modules.All(),
-	}
+	vm.modules["testing"].(*testing.TestingModule).SetOutput(
+		stdout,
+		stderr,
+	)
+
+	vm.env.define("nil", g.NewNil())
+	vm.env.define("true", g.NewBool(true))
+	vm.env.define("false", g.NewBool(false))
+	vm.env.define("out", stdout)
+	return vm
 }
 
-// Run runs the provided code
+func (m *VM) GetModule(name string) modules.Module {
+	return m.modules[name]
+}
+
+func (m *VM) DisableErrorHandling() {
+	m.errhandle = false
+}
+
+func (m *VM) RunFile(path string) (g.Object, error) {
+	source, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	code, err := compiler.Compile(string(source))
+	if err != nil {
+		return nil, err
+	}
+
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+
+	m.env.define("__file", g.NewString(path))
+
+	return m.Run(code)
+}
+
 func (m *VM) Run(code compiler.Code) (value g.Object, err error) {
-	defer errors.Handle(&err)
+	if m.errhandle {
+		defer errors.Handle(&err)
+	}
 
 	value = m.run(code)
 	return
@@ -57,10 +95,17 @@ loop:
 		pc++
 
 		switch ins.Opcode {
+		case op.PushValue:
+			m.stack.push(NewInternalObject(ins.Arg))
+
 		case op.LoadConst:
 			m.stack.push(g.NewObject(ins.Arg))
 
-		case op.StoreName:
+		case op.GetName:
+			name := ins.Arg.(string)
+			m.stack.push(m.env.lookup(name))
+
+		case op.SetName:
 			name := ins.Arg.(string)
 			if m.env.defined(name) {
 				m.env.assign(name, m.stack.pop())
@@ -68,121 +113,76 @@ loop:
 				m.env.define(name, m.stack.pop())
 			}
 
-		case op.LoadName:
-			name := ins.Arg.(string)
-			m.stack.push(m.env.lookup(name))
-
-		case op.RemoveName:
+		case op.DelName:
 			name := ins.Arg.(string)
 			m.env.remove(name)
-
-		case op.CallFunc:
-			argc := ins.Arg.(int)
-			args := make(g.Args, argc)
-
-			for i := 0; i < argc; i++ {
-				args[argc-i-1] = m.stack.pop()
-			}
-
-			fun := m.stack.pop()
-
-			switch fun.Type() {
-			case g.TypeInternalFunc:
-				m.stack.push(g.Invoke(fun, args))
-
-			case g.TypeFunc:
-				fun := g.EnsureFunc(fun)
-
-				errors.ErrRuntime.ExpectLen(
-					fun.Params(),
-					len(args),
-					"expected %d args, got %d",
-					len(fun.Params()),
-					len(args),
-				)
-
-				vmenv := m.env
-				env := &env{
-					parent: fun.Env().(*env),
-				}
-
-				for i, param := range fun.Params() {
-					env.define(param, args[i])
-				}
-
-				m.env = env
-				m.stack.push(m.run(fun.Code()))
-				m.env = vmenv
-
-			default:
-				errors.ErrRuntime.Panic(
-					"unexpected type called as function: gtypes.%s",
-					fun.Type().Name,
-				)
-			}
 
 		case op.RelJump:
 			pc += ins.Arg.(int)
 
 		case op.RelJumpIfTrue:
-			condition := m.stack.pop()
-			if g.IsTruthy(condition) {
+			if m.stack.pop().G_bool().Bool() {
 				pc += ins.Arg.(int)
 			}
 
 		case op.RelJumpIfFalse:
-			condition := m.stack.pop()
-			if !g.IsTruthy(condition) {
+			if m.stack.pop().G_not().Bool() {
 				pc += ins.Arg.(int)
 			}
 
-		case op.PushValue:
-			m.stack.push(g.NewObjectInternal(ins.Arg))
+		case op.CallFunc:
+			argc := ins.Arg.(int)
+			args := g.NewArgs(make([]g.Object, argc))
+
+			for i := 0; i < argc; i++ {
+				args.Set(argc-i-1, m.stack.pop())
+			}
+
+			fun := m.stack.pop()
+			m.stack.push(fun.G_invoke(args))
+
+		case op.GetAttr:
+			name := ins.Arg.(string)
+			object := m.stack.pop()
+			m.stack.push(object.G_getattr(g.NewString(name)))
+
+		case op.SetAttr:
+			name := ins.Arg.(string)
+			value := m.stack.pop()
+			object := m.stack.pop()
+			m.stack.push(object.G_setattr(g.NewString(name), value))
+
+		case op.DelAttr:
+			name := ins.Arg.(string)
+			object := m.stack.pop()
+			m.stack.push(object.G_delattr(g.NewString(name)))
 
 		case op.MakeFunc:
-			body := m.stack.pop().Value().(compiler.Code)
+			code := m.stack.pop().Value().(compiler.Code)
 			params := m.stack.pop().Value().([]string)
-			m.stack.push(g.NewObjectFunc(params, body, m.env))
-
-		case op.LoadModule:
-			name := ins.Arg.(string)
-			module, ok := m.modules[name]
-
-			errors.ErrRuntime.Expect(ok, "undefined module: %s", name)
-
-			m.env.define(name, module.Load())
+			m.stack.push(NewFunc(m, m.env, params, code))
 
 		case op.MakeList:
 			length := ins.Arg.(int)
-			values := make([]g.Object, length)
+			list := g.NewListSized(length)
 
 			for i := 0; i < length; i++ {
-				values[length-i-1] = m.stack.pop()
+				list.Set(length-i-1, m.stack.pop())
 			}
 
-			m.stack.push(g.NewObjectList(values))
-
-		case op.IndexGet:
-			index := m.stack.pop()
-			value := m.stack.pop()
-			m.stack.push(value.Call(protocols.Index, g.Args{index}))
-
-		case op.AttributeGet:
-			value := m.stack.pop()
-			attr := g.NewObjectString(ins.Arg.(string))
-			m.stack.push(value.Call(protocols.GetAttr, g.Args{attr}))
-
-		case op.AttributeSet:
-			value := m.stack.pop()
-			object := m.stack.pop()
-			attr := g.NewObjectString(ins.Arg.(string))
-			m.stack.push(object.Call(protocols.SetAttr, g.Args{attr, value}))
-
-		case op.NoOp:
-			//
+			m.stack.push(list)
 
 		case op.Return:
 			break loop
+
+		case op.LoadModule:
+			name := ins.Arg.(string)
+			mod, ok := m.modules[name]
+			errors.ErrRuntime.Expect(ok, "undefined module %q", name)
+			m.env.define(name, mod)
+
+		case op.NoOp:
+			//
 
 		default:
 			assert.Unreached("unknown instruction: 0x%02x (%s) %#v", int(ins.Opcode), ins.Opcode.Name(), ins)
@@ -193,5 +193,5 @@ loop:
 		return m.stack.pop()
 	}
 
-	return g.NewObjectNil()
+	return nil
 }

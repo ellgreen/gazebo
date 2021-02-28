@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -12,12 +11,18 @@ import (
 	"github.com/johnfrankmorgan/gazebo/debug"
 	"github.com/johnfrankmorgan/gazebo/errors"
 	"github.com/johnfrankmorgan/gazebo/g"
-	"github.com/johnfrankmorgan/gazebo/protocols"
+	"github.com/johnfrankmorgan/gazebo/g/protocols"
 	"github.com/johnfrankmorgan/gazebo/vm"
 )
 
+var (
+	debugging *bool
+	errhandle *bool
+)
+
 func main() {
-	debugging := flag.Bool("d", false, "enable debugging")
+	debugging = flag.Bool("d", false, "enable debugging")
+	errhandle = flag.Bool("e", true, "enable error handling")
 
 	flag.Parse()
 
@@ -34,17 +39,7 @@ func main() {
 		return
 	}
 
-	source, err := ioutil.ReadFile(flag.Args()[0])
-	assert.Nil(err)
-
-	code, err := compiler.Compile(string(source))
-	assert.Nil(err)
-
-	if debug.Enabled() {
-		debug.Printf("\n\n")
-	}
-
-	_, err = vm.New(flag.Args()[1:]...).Run(code)
+	_, err := vm.New().RunFile(flag.Args()[0])
 	assert.Nil(err)
 }
 
@@ -59,7 +54,12 @@ func newrepl() *repl {
 	rl, err := readline.New("")
 	assert.Nil(err)
 
-	return &repl{vm: vm.New(), rl: rl}
+	repl := &repl{vm: vm.New(), rl: rl}
+	if !*errhandle {
+		repl.vm.DisableErrorHandling()
+	}
+
+	return repl
 }
 
 func (m *repl) errorln(err error) {
@@ -103,8 +103,8 @@ func (m *repl) loop() {
 			m.errorln(err)
 		}
 
-		if result != nil && result.Type() != g.TypeNil {
-			fmt.Printf("%v\n", result.Call(protocols.Inspect, nil).Value())
+		if result != nil && result.Value() != nil {
+			fmt.Printf("%s\n", result.CallMethod(protocols.String, &g.Args{}))
 		}
 
 		m.reset()
