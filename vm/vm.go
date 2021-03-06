@@ -6,7 +6,9 @@ import (
 
 	"github.com/johnfrankmorgan/gazebo/assert"
 	"github.com/johnfrankmorgan/gazebo/compiler"
-	"github.com/johnfrankmorgan/gazebo/compiler/op"
+	"github.com/johnfrankmorgan/gazebo/compiler/code"
+	"github.com/johnfrankmorgan/gazebo/compiler/code/op"
+	"github.com/johnfrankmorgan/gazebo/debug"
 	"github.com/johnfrankmorgan/gazebo/errors"
 	"github.com/johnfrankmorgan/gazebo/g"
 	"github.com/johnfrankmorgan/gazebo/g/modules"
@@ -15,18 +17,16 @@ import (
 )
 
 type VM struct {
-	stack     *stack
-	env       *env
-	modules   map[string]modules.Module
-	errhandle bool
+	stack   *stack
+	env     *env
+	modules map[string]modules.Module
 }
 
 func New() *VM {
 	vm := &VM{
-		stack:     new(stack),
-		env:       new(env),
-		errhandle: true,
-		modules:   make(map[string]modules.Module),
+		stack:   new(stack),
+		env:     new(env),
+		modules: make(map[string]modules.Module),
 	}
 
 	for _, mod := range modules.All() {
@@ -52,10 +52,6 @@ func (m *VM) GetModule(name string) modules.Module {
 	return m.modules[name]
 }
 
-func (m *VM) DisableErrorHandling() {
-	m.errhandle = false
-}
-
 func (m *VM) RunFile(path string) (g.Object, error) {
 	source, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -77,21 +73,27 @@ func (m *VM) RunFile(path string) (g.Object, error) {
 	return m.Run(code)
 }
 
-func (m *VM) Run(code compiler.Code) (value g.Object, err error) {
-	if m.errhandle {
-		defer errors.Handle(&err)
-	}
+func (m *VM) Run(code code.Code) (value g.Object, err error) {
+	defer errors.Handle(&err)
 
 	value = m.run(code)
 	return
 }
 
-func (m *VM) run(code compiler.Code) g.Object {
+func (m *VM) run(instructions code.Code) g.Object {
 	var pc int
 
 loop:
-	for pc < len(code) {
-		ins := code[pc]
+	for pc < len(instructions) {
+		ins := instructions[pc]
+
+		if debug.Enabled() {
+			debug.Printf("INSTRUCTION ")
+			instructions[pc : pc+1].Dump()
+			debug.Printf("\n")
+			m.stack.dump()
+		}
+
 		pc++
 
 		switch ins.Opcode {
@@ -158,7 +160,7 @@ loop:
 			m.stack.push(object.G_delattr(g.NewString(name)))
 
 		case op.MakeFunc:
-			code := m.stack.pop().Value().(compiler.Code)
+			code := m.stack.pop().Value().(code.Code)
 			params := m.stack.pop().Value().([]string)
 			m.stack.push(NewFunc(m, m.env, params, code))
 
